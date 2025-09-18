@@ -72,7 +72,7 @@
         document.getElementById('activityTable').style.display = 'table';
         data.forEach((a, i) => {
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${i+1}</td><td>${a.name}</td><td>${a.email}</td><td>${a.time}</td>`;
+          tr.innerHTML = `<td>${i+1}</td><td>${a.name}</td><td>${a.email}</td><td>${new Date(a.time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>`;
           tbody.appendChild(tr);
         });
       })
@@ -91,3 +91,4 @@
   </script>
 </body>
 </html>
+
