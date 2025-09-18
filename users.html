@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Users - Alumni Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header small">
+    <div class="container header-inner">
+      <div class="brand">
+        <img src="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg" alt="Logo" class="logo">
+        <div>
+          <h1>Alumni Portal</h1>
+          <p class="tagline">Registered Users</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="auth.html">Account</a>
+        <a href="welcome.html">Dashboard</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="users-box fade-up">
+      <h2>Registered Alumni</h2>
+      <p class="muted">Below are accounts from the database. Only visible to admin.</p>
+      <table id="usersTable" class="users-table">
+        <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Admin</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="noUsers" class="muted">No users found.</p>
+      <p id="usersError" class="muted" style="color:red;"></p>
+    </section>
+  </main>
+
+  <script>
+    // Only allow admin (JWT check)
+    const current = JSON.parse(localStorage.getItem('currentUser'));
+    const token = localStorage.getItem('token');
+    if (!current || !current.is_admin || !token) {
+      window.location.href = 'admin-login.html';
+    }
+    function renderUsers() {
+      fetch('http://localhost:3001/api/users', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.error){
+          document.getElementById('usersError').textContent = data.error;
+          document.getElementById('usersTable').style.display = 'none';
+          return;
+        }
+        const tbody = document.querySelector('#usersTable tbody');
+        tbody.innerHTML = '';
+        if (data.length === 0) {
+          document.getElementById('noUsers').style.display = 'block';
+          document.getElementById('usersTable').style.display = 'none';
+          return;
+        }
+        document.getElementById('noUsers').style.display = 'none';
+        document.getElementById('usersTable').style.display = 'table';
+        data.forEach((u, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${i+1}</td><td>${u.name}</td><td>${u.email}</td><td>${u.is_admin ? 'Yes' : 'No'}</td>`;
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(()=>{
+        document.getElementById('usersError').textContent = 'Server error.';
+      });
+    }
+    renderUsers();
+    function logout() {
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

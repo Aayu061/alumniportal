@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - User Login Activity</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header small">
+    <div class="container header-inner">
+      <div class="brand">
+        <img src="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg" alt="Logo" class="logo">
+        <div>
+          <h1>Alumni Portal</h1>
+          <p class="tagline">Admin Dashboard</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="users.html">Users</a>
+        <a href="welcome.html">Dashboard</a>
+        <a href="auth.html">Account</a>
+        <a href="#" onclick="logout()" class="btn ghost small">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="users-box fade-up">
+      <h2>User Login Activity</h2>
+      <p class="muted">Below are login activities. Only visible to admin.</p>
+      <table id="activityTable" class="users-table">
+        <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Login Time</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="noActivity" class="muted">No login activity found.</p>
+      <p id="adminError" class="muted" style="color:red;"></p>
+    </section>
+  </main>
+
+  <script>
+    // Only allow admin (JWT check)
+    const current = JSON.parse(localStorage.getItem('currentUser'));
+    const token = localStorage.getItem('token');
+    if (!current || !current.is_admin || !token) {
+      window.location.href = 'admin-login.html';
+    }
+    function renderActivity() {
+      fetch('http://localhost:3001/api/activity', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.error){
+          document.getElementById('adminError').textContent = data.error;
+          document.getElementById('activityTable').style.display = 'none';
+          return;
+        }
+        const tbody = document.querySelector('#activityTable tbody');
+        tbody.innerHTML = '';
+        if (data.length === 0) {
+          document.getElementById('noActivity').style.display = 'block';
+          document.getElementById('activityTable').style.display = 'none';
+          return;
+        }
+        document.getElementById('noActivity').style.display = 'none';
+        document.getElementById('activityTable').style.display = 'table';
+        data.forEach((a, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${i+1}</td><td>${a.name}</td><td>${a.email}</td><td>${a.time}</td>`;
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(()=>{
+        document.getElementById('adminError').textContent = 'Server error.';
+      });
+    }
+    renderActivity();
+    function logout() {
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

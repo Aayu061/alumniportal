@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Alumni Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <img src="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg" alt="Logo" class="logo">
+        <div>
+          <h1>Alumni Portal</h1>
+          <p class="tagline">Networking • Mentoring • Career</p>
+        </div>
+      </div>
+      <nav class="nav" id="mainNav" style="display:flex;align-items:center;width:100%;">
+  <div style="display:flex;align-items:center;gap:0.5rem;flex:1;">
+          <a href="index.html">Home</a>
+          <a href="#networking">Networking</a>
+          <a href="#mentoring">Mentoring</a>
+          <a href="#careers">Career Updates</a>
+          <a href="contact.html">Contact Us</a>
+          <a href="users.html" class="btn ghost small">Users</a>
+          <a href="admin-login.html" class="btn ghost small">Admin</a>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:10px;min-width:220px;justify-content:flex-end;">
+          <span id="userNav" style="font-weight:600;color:#2563eb;"></span>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-bg"></div>
+      <div class="container hero-content">
+        <h2 class="fade-up">Welcome back to the Alumni Portal</h2>
+        <p class="fade-up delay">Join alumni across batches — network, mentor and discover opportunities.</p>
+        <div class="hero-actions fade-up delay-2">
+          <a href="auth.html" class="btn">Get Started</a>
+          <a href="#networking" class="btn ghost">Explore</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="cards container">
+      <div class="card" id="networking">
+        <h3>Alumni Networking</h3>
+        <p>Find and connect with batchmates, form groups, and expand your professional circle.</p>
+        <a class="learn-more">Learn more →</a>
+      </div>
+      <div class="card" id="mentoring">
+        <h3>Mentoring</h3>
+        <p>Experienced alumni offer guidance, mentorship and career advice to students and fresh grads.</p>
+        <a class="learn-more">Become a mentor →</a>
+      </div>
+      <div class="card" id="careers">
+        <h3>Career Updates</h3>
+        <p>Access hand-picked job openings, internships and skill-building programs shared by alumni.</p>
+        <a class="learn-more">View opportunities →</a>
+      </div>
+    </section>
+
+      <div class="info-card">
+        <h3>Why join?</h3>
+        <ul>
+          <li>Strengthen your professional network</li>
+          <li>Give or receive mentorship</li>
+          <li>Exclusive career updates</li>
+        </ul>
+        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=800&auto=format&fit=crop" alt="banner" class="info-img">
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2025 Alumni Portal • Built with HTML/CSS/JS • Demo (localStorage)</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    // Show user info or login/signup in nav
+    const userNav = document.getElementById('userNav');
+    const current = JSON.parse(localStorage.getItem('currentUser'));
+    if (current) {
+      userNav.innerHTML = `<span style="color:white;font-weight:600;margin-right:8px;">Hi, ${current.name}</span><button class="btn small ghost" onclick="logoutIndex()">Logout</button>`;
+    } else {
+      userNav.innerHTML = `<a href="auth.html" class="btn small">Login / Signup</a>`;
+    }
+    function logoutIndex() {
+      localStorage.removeItem('currentUser');
+      window.location.reload();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Welcome - Alumni Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header small">
+    <div class="container header-inner">
+      <div class="brand">
+        <img src="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg" alt="Logo" class="logo">
+        <div>
+          <h1>Alumni Portal</h1>
+          <p class="tagline">Welcome Dashboard</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="auth.html">Account</a>
+        <a href="users.html">Users</a>
+        <button class="btn" onclick="logout()">Logout</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="welcome-box fade-up">
+      <h2 id="welcomeUser">Hello, Alumni!</h2>
+      <p>Welcome to your dashboard. From here you can explore networking opportunities, mentoring sessions and career updates.</p>
+      <!-- Spacer for layout -->
+      <div style="height:32px;"></div>
+    </section>
+  </main>
+
+  <script>
+    const current = JSON.parse(localStorage.getItem('currentUser'));
+    if (!current) {
+      window.location.href = 'auth.html';
+    } else {
+      document.getElementById('welcomeUser').textContent = 'Hello, ' + current.name + ' 👋';
+    }
+    function logout() {
+      localStorage.removeItem('currentUser');
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+    <footer class="site-footer" style="position:fixed;left:0;bottom:0;width:100vw;padding:18px 0 14px 0;background:#ffffff;color:#007bff;text-align:center;border-top:1px solid rgba(255,255,255,0.04);z-index:100;box-shadow:0 -2px 16px rgba(11,99,210,0.07);">
+    <a href="index.html" class="btn" style="display:inline-block;min-width:160px;text-align:center;background:#0b63d2;color:#fff;border:none;box-shadow:0 8px 20px rgba(0,191,166,0.12);font-weight:700;">Back to Home</a>
+    </footer>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Auth - Alumni Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="auth-page" style="background: linear-gradient(120deg, #e0e7ff 0%, #f5f7fb 100%); min-height:100vh;">
+  <div class="container" style="max-width: 440px; margin: 48px auto;">
+    <div style="background: linear-gradient(135deg, #ffffff 60%, #e3f6f5 100%); border-radius: 18px; box-shadow: 0 8px 32px rgba(17,34,60,0.13); padding: 36px 30px 30px 30px; position:relative; border: 1.5px solid #e0e7ff;">
+  <a href="index.html" class="btn ghost small" style="position:absolute; left:20px; top:20px; text-decoration:none;">← Back</a>
+      <div style="height:38px;"></div>
+      <div id="authCardContent">
+        <h2 id="authTitle" style="text-align:center; margin-bottom: 18px; font-weight: bold;">Login</h2>
+        <form id="loginForm" class="form" onsubmit="event.preventDefault(); login();" style="display:block;">
+          <input type="email" id="loginEmail" placeholder="Email" required>
+          <input type="password" id="loginPassword" placeholder="Password" required>
+          <button type="submit" class="btn" style="width:100%;margin-top:10px;">Login</button>
+          <p id="loginMsg" class="muted"></p>
+        </form>
+        <form id="registerForm" class="form" onsubmit="register(event)" style="display:none;">
+          <input type="text" id="name" placeholder="Full name" required>
+          <input type="email" id="email" placeholder="Email" required>
+          <input type="password" id="password" placeholder="Password" required>
+          <input type="password" id="confirmPassword" placeholder="Confirm password" required>
+          <button type="submit" class="btn" style="width:100%;margin-top:10px;">Sign Up</button>
+          <p id="registerMsg" class="muted"></p>
+        </form>
+        <div style="text-align:center; margin-top:16px;">
+          <span id="toggleAuthText">Don't have an account? <a href="#" id="showSignup" style="color:#5a6ff0;text-decoration:none;">Sign Up</a></span>
+        </div>
+      </div>
+      <script>
+        // Toggle between login and signup
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const authTitle = document.getElementById('authTitle');
+        const toggleAuthText = document.getElementById('toggleAuthText');
+        document.getElementById('showSignup').onclick = function(e) {
+          e.preventDefault();
+          loginForm.style.display = 'none';
+          registerForm.style.display = 'block';
+          authTitle.textContent = 'Sign Up';
+          toggleAuthText.innerHTML = 'Already have an account? <a href="#" id="showLogin" style="color:#5a6ff0;text-decoration:none;">Login</a>';
+          document.getElementById('showLogin').onclick = showLogin;
+        };
+        function showLogin(e) {
+          if(e) e.preventDefault();
+          loginForm.style.display = 'block';
+          registerForm.style.display = 'none';
+          authTitle.textContent = 'Login';
+          toggleAuthText.innerHTML = 'Don\'t have an account? <a href="#" id="showSignup" style="color:#5a6ff0;text-decoration:none;">Sign Up</a>';
+          document.getElementById('showSignup').onclick = function(e) {
+            e.preventDefault();
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+            authTitle.textContent = 'Sign Up';
+            toggleAuthText.innerHTML = 'Already have an account? <a href="#" id="showLogin" style="color:#5a6ff0;text-decoration:none;">Login</a>';
+            document.getElementById('showLogin').onclick = showLogin;
+          };
+        }
+      </script>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

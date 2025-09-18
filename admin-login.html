@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Login - Alumni Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page" style="background: linear-gradient(120deg, #e0e7ff 0%, #f5f7fb 100%); min-height:100vh;">
+  <div class="container" style="max-width: 400px; margin: 60px auto;">
+    <div style="background: #fff; border-radius: 16px; box-shadow: 0 8px 32px rgba(17,34,60,0.13); padding: 36px 30px 30px 30px; position:relative; border: 1.5px solid #e0e7ff;">
+      <h2 style="text-align:center; margin-bottom: 18px; font-weight: bold;">Admin Login</h2>
+      <form id="adminLoginForm" class="form" onsubmit="event.preventDefault(); adminLogin();">
+        <input type="email" id="adminEmail" placeholder="Admin Email" required style="margin-bottom:14px;">
+        <input type="password" id="adminPassword" placeholder="Password" required style="margin-bottom:18px;">
+        <button type="submit" class="btn" style="width:100%;">Login</button>
+        <p id="adminLoginMsg" class="muted"></p>
+      </form>
+    </div>
+  </div>
+ye  <div style="position: fixed; bottom: 32px; left: 40px; z-index: 100;">
+    <button class="btn" style="background: var(--accent); color: white;" onclick="window.location.href='index.html'">← Back to Home</button>
+  </div>
+  <script>
+    function adminLogin() {
+      const email = document.getElementById('adminEmail').value.trim().toLowerCase();
+      const password = document.getElementById('adminPassword').value;
+      const msg = document.getElementById('adminLoginMsg');
+      msg.style.color = 'red';
+      // Hardcoded admin credentials
+      if(email === 'admin@admin.com' && password === 'admin123') {
+        localStorage.setItem('currentUser', JSON.stringify({ name: 'Admin', email: email, is_admin: true }));
+        localStorage.setItem('token', 'dummy-admin-token');
+        msg.style.color = 'green';
+        msg.textContent = 'Login successful! Redirecting...';
+        setTimeout(()=>{ window.location.href = 'admin.html'; }, 900);
+      } else {
+        msg.textContent = 'Invalid admin credentials.';
+      }
+    }
+  </script>
+</body>
+</html>
