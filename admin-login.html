@@ -18,25 +18,38 @@
       </form>
     </div>
   </div>
-ye  <div style="position: fixed; bottom: 32px; left: 40px; z-index: 100;">
+
+  <div style="position: fixed; bottom: 32px; left: 40px; z-index: 100;">
     <button class="btn" style="background: var(--accent); color: white;" onclick="window.location.href='index.html'">← Back to Home</button>
   </div>
+
   <script>
     function adminLogin() {
       const email = document.getElementById('adminEmail').value.trim().toLowerCase();
       const password = document.getElementById('adminPassword').value;
       const msg = document.getElementById('adminLoginMsg');
       msg.style.color = 'red';
-      // Hardcoded admin credentials
-      if(email === 'admin@admin.com' && password === 'admin123') {
-        localStorage.setItem('currentUser', JSON.stringify({ name: 'Admin', email: email, is_admin: true }));
-        localStorage.setItem('token', 'dummy-admin-token');
+
+      fetch('https://alumniportal-jg5p.onrender.com/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          msg.textContent = data.error;
+          return;
+        }
+        // Save real JWT + user info
+        localStorage.setItem('currentUser', JSON.stringify({ name: data.name, email: data.email, is_admin: data.is_admin }));
+        localStorage.setItem('token', data.token);
+
         msg.style.color = 'green';
         msg.textContent = 'Login successful! Redirecting...';
-        setTimeout(()=>{ window.location.href = 'admin.html'; }, 900);
-      } else {
-        msg.textContent = 'Invalid admin credentials.';
-      }
+        setTimeout(() => { window.location.href = 'admin.html'; }, 900);
+      })
+      .catch(() => { msg.textContent = 'Server error.'; });
     }
   </script>
 </body>
