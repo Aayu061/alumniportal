@@ -24,14 +24,19 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow no-origin requests
+    console.log('[CORS] incoming Origin:', origin);  // NEW
+
+    if (!origin) return callback(null, true);
+
     if (allowedOrigins.indexOf(origin) === -1) {
+      console.log('[CORS] origin NOT allowed:', origin);  // NEW
       return callback(new Error('CORS not allowed from this origin'), false);
     }
+
+    console.log('[CORS] origin allowed:', origin);  // NEW
     return callback(null, true);
   }
 }));
-
 app.use(bodyParser.json());
 
 
@@ -119,3 +124,4 @@ app.get('/api/activity', requireAdmin, (req, res) => {
 });
 
 app.listen(PORT, () => console.log('Server running on port', PORT));
+
