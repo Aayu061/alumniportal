@@ -10,10 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET = 'alumni_secret_key';
 
-// Allow CORS for GitHub Pages and localhost
+// Allow CORS for GitHub Pages (user + project) and localhost
 const allowedOrigins = [
-  'https://aayu861.github.io', // your GitHub Pages site
-  'https://aayu061.github.io', // if you also deploy under this username
+  'https://aayu061.github.io',                 // user site (if used)
+  'https://aayu061.github.io/alumniportal',    // <-- ADD THIS (project Pages origin)
+  'https://aayu861.github.io',                 // keep if you actually use this too
+  'https://aayu861.github.io/alumniportal',    // optional: same for other username/project
   'http://localhost:5500',
   'http://127.0.0.1:5500',
   'http://localhost:3000',
