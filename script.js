@@ -1,3 +1,6 @@
+// Replace localhost with your Render service URL
+const API_BASE = 'https://alumniportal-jg5p.onrender.com';
+
 /* Central script for auth, users, contact - localStorage only */
 
 /* Register new user (adds to users array) */
@@ -13,7 +16,7 @@ function register(event){
   if(!name || !email || !password || !confirm){ msg.textContent = 'Please fill all fields.'; return; }
   if(password.length < 6){ msg.textContent = 'Password should be at least 6 characters.'; return; }
   if(password !== confirm){ msg.textContent = 'Passwords do not match.'; return; }
-  fetch('http://localhost:3001/api/register', {
+  fetch(`${API_BASE}/api/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, email, password })
@@ -34,7 +37,7 @@ function login(){
   const password = document.getElementById('loginPassword').value;
   const msg = document.getElementById('loginMsg');
   msg.style.color = 'red';
-  fetch('http://localhost:3001/api/login', {
+  fetch(`${API_BASE}/api/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
