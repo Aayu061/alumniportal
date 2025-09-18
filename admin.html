@@ -6,7 +6,7 @@
   <title>Admin - User Login Activity</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body>                                                                        
   <header class="site-header small">
     <div class="container header-inner">
       <div class="brand">
@@ -40,14 +40,18 @@
   </main>
 
   <script>
+    // Base API URL (Render backend)
+    const API_BASE = 'https://alumniportal-jg5p.onrender.com';
+
     // Only allow admin (JWT check)
     const current = JSON.parse(localStorage.getItem('currentUser'));
     const token = localStorage.getItem('token');
     if (!current || !current.is_admin || !token) {
       window.location.href = 'admin-login.html';
     }
+
     function renderActivity() {
-      fetch('https://alumniportal-jg5p.onrender.com/api/activity', {
+      fetch(`${API_BASE}/api/activity`, {
         headers: { 'Authorization': 'Bearer ' + token }
       })
       .then(res => res.json())
@@ -76,7 +80,9 @@
         document.getElementById('adminError').textContent = 'Server error.';
       });
     }
+
     renderActivity();
+
     function logout() {
       localStorage.removeItem('currentUser');
       localStorage.removeItem('token');
@@ -85,4 +91,3 @@
   </script>
 </body>
 </html>
-
