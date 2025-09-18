@@ -47,7 +47,7 @@
       window.location.href = 'admin-login.html';
     }
     function renderActivity() {
-      fetch('http://localhost:3001/api/activity', {
+      fetch('https://alumniportal-jg5p.onrender.com/api/activity', {
         headers: { 'Authorization': 'Bearer ' + token }
       })
       .then(res => res.json())
@@ -85,3 +85,4 @@
   </script>
 </body>
 </html>
+
