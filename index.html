@@ -96,35 +96,33 @@
   const current = JSON.parse(localStorage.getItem('currentUser') || 'null');
   const token = localStorage.getItem('token');
 
-  if (!current) {
+  if (!current || !token) {
     // not logged in -> show login/signup and allow Admin login link
     userNav.innerHTML = `<a href="auth.html" class="btn small">Login / Signup</a>`;
-    if (navAdmin) navAdmin.style.display = ''; // <-- show admin login so admins can sign in
-    return;
+    if (navAdmin) navAdmin.style.display = ''; // show admin login so admins can sign in
   } else {
     // logged in: show greeting + logout
     userNav.innerHTML = `<span style="color:white;font-weight:600;margin-right:8px;">Hi, ${current.name}</span>
                          <button class="btn small ghost" id="navLogoutBtn">Logout</button>`;
-  }
 
-  // show admin/users only for admin users
-  if (current.is_admin) {
-    if (navUsers) navUsers.style.display = ''; // show
-    if (navAdmin) navAdmin.style.display = ''; // show
-  } else {
-    // non-admin: hide Users and Admin
-    if (navUsers) navUsers.style.display = 'none';
-    if (navAdmin) navAdmin.style.display = 'none';
-  }
+    // show admin/users only for admin users
+    if (current.is_admin) {
+      if (navUsers) navUsers.style.display = '';
+      if (navAdmin) navAdmin.style.display = '';
+    } else {
+      if (navUsers) navUsers.style.display = 'none';
+      if (navAdmin) navAdmin.style.display = 'none';
+    }
 
-  // attach logout handler
-  const logoutBtn = document.getElementById('navLogoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('token');
-      window.location.reload();
-    });
+    // attach logout handler
+    const logoutBtn = document.getElementById('navLogoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('token');
+        window.location.reload();
+      });
+    }
   }
 </script>
 </body>
