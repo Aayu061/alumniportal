@@ -40,35 +40,92 @@ app.use(cors({
 app.use(bodyParser.json());
 
 
-// SQLite DB setup
-const db = new sqlite3.Database('./alumni.db', (err) => {
-  if (err) throw err;
-  console.log('Connected to SQLite database.');
-});
+// ------------------ Database setup: Postgres (preferred) with SQLite fallback ------------------
+const { Pool } = require('pg');
 
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    is_admin INTEGER DEFAULT 0
-  )`);
-  db.run(`CREATE TABLE IF NOT EXISTS login_activity (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    email TEXT,
-    name TEXT,
-    time TEXT
-  )`);
-  // Ensure admin exists
-  db.get('SELECT * FROM users WHERE email = ?', ['admin@admin.com'], (err, row) => {
-    if (!row) {
-      const hash = bcrypt.hashSync('admin123', 10);
-      db.run('INSERT INTO users (name, email, password, is_admin) VALUES (?, ?, ?, 1)', ['Admin', 'admin@admin.com', hash]);
-    }
+let pool = null;
+if (process.env.DATABASE_URL) {
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    // Render/Postgres may require ssl rejectUnauthorized false
+    ssl: { rejectUnauthorized: false }
   });
-});
+
+  pool.connect()
+    .then(() => console.log('✅ Connected to PostgreSQL'))
+    .catch(err => console.error('❌ PostgreSQL connection error:', err));
+
+  // Ensure tables exist in Postgres
+  (async () => {
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          email TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          is_admin BOOLEAN DEFAULT false
+        );
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS login_activity (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER,
+          email TEXT,
+          name TEXT,
+          time TIMESTAMP
+        );
+      `);
+
+      // Ensure admin exists in Postgres
+      const r = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@admin.com']);
+      if (r.rows.length === 0) {
+        const hash = bcrypt.hashSync('admin123', 10);
+        await pool.query(
+          'INSERT INTO users (name, email, password, is_admin) VALUES ($1,$2,$3,$4)',
+          ['Admin', 'admin@admin.com', hash, true]
+        );
+      }
+      console.log('Postgres tables ensured');
+    } catch (err) {
+      console.error('Error ensuring Postgres tables:', err);
+    }
+  })();
+
+} else {
+  // Fall back to existing SQLite DB (unchanged behavior)
+  const db = new sqlite3.Database('./alumni.db', (err) => {
+    if (err) throw err;
+    console.log('Connected to SQLite database.');
+  });
+
+  db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      is_admin INTEGER DEFAULT 0
+    )`);
+    db.run(`CREATE TABLE IF NOT EXISTS login_activity (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      email TEXT,
+      name TEXT,
+      time TEXT
+    )`);
+    // Ensure admin exists
+    db.get('SELECT * FROM users WHERE email = ?', ['admin@admin.com'], (err, row) => {
+      if (!row) {
+        const hash = bcrypt.hashSync('admin123', 10);
+        db.run('INSERT INTO users (name, email, password, is_admin) VALUES (?, ?, ?, 1)', ['Admin', 'admin@admin.com', hash]);
+      }
+    });
+  });
+
+  // Expose the sqlite3 db variable for the rest of your file to use (unchanged)
+  global.sqliteDb = db;
+}
 
 // Register
 app.post('/api/register', (req, res) => {
@@ -166,5 +223,6 @@ app.post('/api/admin/restore', requireAdmin, (req, res) => {
 });
 
 app.listen(PORT, () => console.log('Server running on port', PORT));
+
 
 
