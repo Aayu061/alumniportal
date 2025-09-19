@@ -24,13 +24,14 @@
   </div>
 
   <script>
+    const API_BASE = 'https://alumniportal-jg5p.onrender.com';
     function adminLogin() {
       const email = document.getElementById('adminEmail').value.trim().toLowerCase();
       const password = document.getElementById('adminPassword').value;
       const msg = document.getElementById('adminLoginMsg');
       msg.style.color = 'red';
 
-      fetch('https://alumniportal-jg5p.onrender.com/api/login', {
+      fetch(`${API_BASE}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -54,3 +55,4 @@
   </script>
 </body>
 </html>
+
