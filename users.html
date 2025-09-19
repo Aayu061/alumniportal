@@ -26,29 +26,45 @@
   </header>
 
   <main class="container" style="margin-top:18px;">
-    <!-- Users -->
-    <section class="users-box fade-up" style="margin-bottom:28px;">
-      <h2>Registered Alumni <button class="btn small ghost" style="margin-left:12px;" onclick="exportUsersCSV()">Export CSV</button></h2>
-      <p class="muted">Below are accounts from the database. Only visible to admin.</p>
-      <table id="usersTable" class="users-table" style="margin-top:12px;">
-        <thead><tr><th style="width:64px">#</th><th>Name</th><th>Email</th><th>Admin</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <p id="noUsers" class="muted">No users found.</p>
-      <p id="usersError" class="muted" style="color:red;"></p>
-    </section>
+    <!-- Collapsible Registered Alumni -->
+<section class="users-box fade-up" style="margin-bottom:18px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <button onclick="toggleSection('alumniSection')" class="btn small ghost">Registered Alumni</button>
+    <div>
+      <button onclick="exportUsersCSV()" class="btn small ghost" style="margin-left:8px;">Export CSV</button>
+    </div>
+  </div>
 
-    <!-- Activity -->
-    <section class="users-box fade-up">
-      <h2>User Login Activity <button class="btn small ghost" style="margin-left:12px;" onclick="exportActivityCSV()">Export CSV</button></h2>
-      <p class="muted">Below are login activities. Only visible to admin.</p>
-      <table id="activityTable" class="users-table" style="margin-top:12px;">
-        <thead><tr><th style="width:64px">#</th><th>Name</th><th>Email</th><th>Login Time</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <p id="noActivity" class="muted">No login activity found.</p>
-      <p id="adminError" class="muted" style="color:red;"></p>
-    </section>
+  <div id="alumniSection" style="display:none; margin-top:14px;">
+    <p class="muted">Below are accounts from the database. Only visible to admin.</p>
+    <table id="usersTable" class="users-table" style="margin-top:12px;">
+      <thead><tr><th style="width:64px">#</th><th>Name</th><th>Email</th><th>Admin</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <p id="noUsers" class="muted">No users found.</p>
+    <p id="usersError" class="muted" style="color:red;"></p>
+  </div>
+</section>
+
+<!-- Collapsible User Login Activity -->
+<section class="users-box fade-up">
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <button onclick="toggleSection('activitySection')" class="btn small ghost">User Login Activity</button>
+    <div>
+      <button onclick="exportActivityCSV()" class="btn small ghost" style="margin-left:8px;">Export CSV</button>
+    </div>
+  </div>
+
+  <div id="activitySection" style="display:none; margin-top:14px;">
+    <p class="muted">Below are login activities. Only visible to admin.</p>
+    <table id="activityTable" class="users-table" style="margin-top:12px;">
+      <thead><tr><th style="width:64px">#</th><th>Name</th><th>Email</th><th>Login Time</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <p id="noActivity" class="muted">No login activity found.</p>
+    <p id="adminError" class="muted" style="color:red;"></p>
+  </div>
+</section>
   </main>
 
   <footer class="site-footer">
@@ -224,6 +240,24 @@
       .catch(err => { console.error(err); alert('Export failed'); });
     }
 
+    // Toggle visibility of collapsible sections (Registered Alumni / Activity)
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  // if collapsed -> show and load data; if shown -> hide
+  const isHidden = el.style.display === 'none' || getComputedStyle(el).display === 'none';
+  el.style.display = isHidden ? 'block' : 'none';
+
+  // If showing, ensure data is loaded
+  if (isHidden) {
+    if (id === 'alumniSection') {
+      loadUsers();
+    } else if (id === 'activitySection') {
+      loadActivity();
+    }
+  }
+}
+ 
     // Initialize
     document.addEventListener('DOMContentLoaded', ()=>{
       loadUsers();
