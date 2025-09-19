@@ -123,5 +123,48 @@ app.get('/api/activity', requireAdmin, (req, res) => {
   });
 });
 
+app.get('/api/admin/backup', requireAdmin, (req, res) => {
+  db.all('SELECT id, name, email, password, is_admin FROM users ORDER BY id', [], (uErr, users) => {
+    if (uErr) return res.status(500).json({ error: 'Failed to read users.' });
+    db.all('SELECT id, user_id, email, name, time FROM login_activity ORDER BY id', [], (aErr, activity) => {
+      if (aErr) return res.status(500).json({ error: 'Failed to read activity.' });
+      res.json({ users, activity });
+    });
+  });
+});
+
+app.post('/api/admin/restore', requireAdmin, (req, res) => {
+  const payload = req.body;
+  if (!payload || !Array.isArray(payload.users) || !Array.isArray(payload.activity)) {
+    return res.status(400).json({ error: 'Invalid backup format. Expect { users:[], activity:[] }' });
+  }
+  try {
+    db.serialize(() => {
+      const uStmt = db.prepare('INSERT OR IGNORE INTO users (id, name, email, password, is_admin) VALUES (?, ?, ?, ?, ?)');
+      for (const u of payload.users) {
+        const id = u.id || null;
+        const name = u.name || '';
+        const email = (u.email || '').toLowerCase();
+        const password = u.password || '';
+        const is_admin = u.is_admin ? 1 : 0;
+        uStmt.run(id, name, email, password, is_admin);
+      }
+      uStmt.finalize();
+
+      const aStmt = db.prepare('INSERT OR IGNORE INTO login_activity (id, user_id, email, name, time) VALUES (?, ?, ?, ?, ?)');
+      for (const a of payload.activity) {
+        const id = a.id || null;
+        aStmt.run(id, a.user_id || null, a.email || '', a.name || '', a.time || new Date().toISOString());
+      }
+      aStmt.finalize();
+    });
+    res.json({ success: true, message: 'Restore queued. Existing rows skipped if duplicate.' });
+  } catch (err) {
+    console.error('Restore failed', err);
+    res.status(500).json({ error: 'Restore failed.' });
+  }
+});
+
 app.listen(PORT, () => console.log('Server running on port', PORT));
+
 
