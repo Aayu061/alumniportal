@@ -166,7 +166,19 @@ body::before {
 .info-img{width:100%;border-radius:8px;margin-top:12px}
 
 /* --- Footer --- */
-.site-footer{padding:18px 0;background:#0b1630;color:#cfe6ff;margin-top:36px;text-align:center;border-top:1px solid rgba(255,255,255,0.04)}
+/* --- Freeze footer at bottom across all pages --- */
+.site-footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  z-index: 50;
+}
+
+/* Prevent overlap with footer */
+main {
+  padding-bottom: 80px; /* adjust if footer height changes */
+}
 
 /* --- Auth Page --- */
 .auth-page{min-height:100vh;display:flex;align-items:stretch}
