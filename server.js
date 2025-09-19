@@ -44,10 +44,11 @@ app.use(bodyParser.json());
 const { Pool } = require('pg');
 
 let pool = null;
+let db = null;                         // <-- ADD this line
+
 if (process.env.DATABASE_URL) {
   pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    // Render/Postgres may require ssl rejectUnauthorized false
     ssl: { rejectUnauthorized: false }
   });
 
@@ -55,7 +56,6 @@ if (process.env.DATABASE_URL) {
     .then(() => console.log('✅ Connected to PostgreSQL'))
     .catch(err => console.error('❌ PostgreSQL connection error:', err));
 
-  // Ensure tables exist in Postgres
   (async () => {
     try {
       await pool.query(`
@@ -77,7 +77,6 @@ if (process.env.DATABASE_URL) {
         );
       `);
 
-      // Ensure admin exists in Postgres
       const r = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@admin.com']);
       if (r.rows.length === 0) {
         const hash = bcrypt.hashSync('admin123', 10);
@@ -94,7 +93,7 @@ if (process.env.DATABASE_URL) {
 
 } else {
   // Fall back to existing SQLite DB (unchanged behavior)
-  const db = new sqlite3.Database('./alumni.db', (err) => {
+  db = new sqlite3.Database('./alumni.db', (err) => {  // <-- changed 'const db' -> 'db ='
     if (err) throw err;
     console.log('Connected to SQLite database.');
   });
@@ -123,7 +122,7 @@ if (process.env.DATABASE_URL) {
     });
   });
 
-  // Expose the sqlite3 db variable for the rest of your file to use (unchanged)
+  // optional: keep global reference (not required if db is in outer scope)
   global.sqliteDb = db;
 }
 
@@ -223,6 +222,7 @@ app.post('/api/admin/restore', requireAdmin, (req, res) => {
 });
 
 app.listen(PORT, () => console.log('Server running on port', PORT));
+
 
 
 
