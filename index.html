@@ -23,8 +23,8 @@
           <a href="#mentoring">Mentoring</a>
           <a href="#careers">Career Updates</a>
           <a href="contact.html">Contact Us</a>
-          <a href="users.html" class="btn ghost small">Users</a>
-          <a href="admin-login.html" class="btn ghost small">Admin</a>
+          <a id="nav-users" href="users.html" class="btn ghost small">Users</a>
+          <a id="nav-admin" href="admin-login.html" class="btn ghost small">Admin</a>
         </div>
         <div style="margin-left:auto;display:flex;align-items:center;gap:10px;min-width:220px;justify-content:flex-end;">
           <span id="userNav" style="font-weight:600;color:#2563eb;"></span>
@@ -82,20 +82,49 @@
     </div>
   </footer>
 
-  <script src="script.js"></script>
-  <script>
-    // Show user info or login/signup in nav
-    const userNav = document.getElementById('userNav');
-    const current = JSON.parse(localStorage.getItem('currentUser'));
-    if (current) {
-      userNav.innerHTML = `<span style="color:white;font-weight:600;margin-right:8px;">Hi, ${current.name}</span><button class="btn small ghost" onclick="logoutIndex()">Logout</button>`;
+<script src="script.js"></script>
+<script>
+  // toggle nav links based on logged-in user and role
+  const userNav = document.getElementById('userNav');
+  const navUsers = document.getElementById('nav-users');
+  const navAdmin = document.getElementById('nav-admin');
+
+  // defensive: hide admin/user links until we decide
+  if (navUsers) navUsers.style.display = 'none';
+  if (navAdmin) navAdmin.style.display = 'none';
+
+  const current = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  const token = localStorage.getItem('token');
+
+  if (!current) {
+    // not logged in -> show login/signup
+    userNav.innerHTML = `<a href="auth.html" class="btn small">Login / Signup</a>`;
+  } else {
+    // logged in: show greeting + logout
+    userNav.innerHTML = `<span style="color:white;font-weight:600;margin-right:8px;">Hi, ${current.name}</span>
+                         <button class="btn small ghost" id="navLogoutBtn">Logout</button>`;
+
+    // show admin/users only for admin users
+    if (current.is_admin) {
+      if (navUsers) navUsers.style.display = ''; // show
+      if (navAdmin) navAdmin.style.display = ''; // show
     } else {
-      userNav.innerHTML = `<a href="auth.html" class="btn small">Login / Signup</a>`;
+      // non-admin: hide both Users and Admin
+      if (navUsers) navUsers.style.display = 'none';
+      if (navAdmin) navAdmin.style.display = 'none';
     }
-    function logoutIndex() {
-      localStorage.removeItem('currentUser');
-      window.location.reload();
+
+    // attach logout handler
+    const logoutBtn = document.getElementById('navLogoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('token');
+        // reload to update UI
+        window.location.reload();
+      });
     }
-  </script>
+  }
+</script>
 </body>
 </html>
