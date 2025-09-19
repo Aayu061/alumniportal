@@ -77,14 +77,14 @@ if (process.env.DATABASE_URL) {
         );
       `);
 
-      const r = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@admin.com']);
-      if (r.rows.length === 0) {
-        const hash = bcrypt.hashSync('admin123', 10);
-        await pool.query(
-          'INSERT INTO users (name, email, password, is_admin) VALUES ($1,$2,$3,$4)',
-          ['Admin', 'admin@admin.com', hash, true]
-        );
-      }
+   const r = await pool.query('SELECT id FROM users WHERE email = $1', ['aluminiportalddvscm@gmail.com']);
+   if (r.rows.length === 0) {
+     const hash = bcrypt.hashSync('ddvsc@123', 10);
+     await pool.query(
+      'INSERT INTO users (name, email, password, is_admin) VALUES ($1,$2,$3,$4)',
+      ['Admin', 'aluminiportalddvscm@gmail.com', hash, true]
+    );
+  }
       console.log('Postgres tables ensured');
     } catch (err) {
       console.error('Error ensuring Postgres tables:', err);
@@ -114,13 +114,13 @@ if (process.env.DATABASE_URL) {
       time TEXT
     )`);
     // Ensure admin exists
-    db.get('SELECT * FROM users WHERE email = ?', ['admin@admin.com'], (err, row) => {
+    db.get('SELECT * FROM users WHERE email = ?', ['aluminiportalddvscm@gmail.com'], (err, row) => {
       if (!row) {
-        const hash = bcrypt.hashSync('admin123', 10);
-        db.run('INSERT INTO users (name, email, password, is_admin) VALUES (?, ?, ?, 1)', ['Admin', 'admin@admin.com', hash]);
-      }
-    });
-  });
+        const hash = bcrypt.hashSync('ddvsc@123', 10);
+        db.run('INSERT INTO users (name, email, password, is_admin) VALUES (?, ?, ?, 1)', ['Admin', 'aluminiportalddvscm@gmail.com', hash]);
+     }
+   });
+});
 
   // optional: keep global reference (not required if db is in outer scope)
   global.sqliteDb = db;
@@ -414,6 +414,7 @@ app.post('/api/admin/restore', requireAdmin, (req, res) => {
 });
 
 app.listen(PORT, () => console.log('Server running on port', PORT));
+
 
 
 
