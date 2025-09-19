@@ -38,6 +38,8 @@
   </main>
 
   <script>
+    const API_BASE = 'https://alumniportal-jg5p.onrender.com';
+    
     // Only allow admin (JWT check)
     const current = JSON.parse(localStorage.getItem('currentUser'));
     const token = localStorage.getItem('token');
@@ -45,7 +47,7 @@
       window.location.href = 'admin-login.html';
     }
     function renderUsers() {
-      fetch('http://localhost:3001/api/users', {
+      fetch(`${API_BASE}/api/users`, {
         headers: { 'Authorization': 'Bearer ' + token }
       })
       .then(res => res.json())
