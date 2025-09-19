@@ -1,0 +1,62 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Admin",
+      "email": "admin@admin.com",
+      "password": "$2b$10$zQltJL1RUK550qIGulQPYupVN/liXBT4neTTh59yTucsU8IHxHFfy",
+      "is_admin": 1
+    },
+    {
+      "id": 2,
+      "name": "Aayush Deepak Panchal",
+      "email": "aayu.panchal06@gmail.com",
+      "password": "$2b$10$gCZ5MtLyDgo.4a/cGstkAuQ3zoVjRF/enVQZ/UEYQP72pUFXGYxVq",
+      "is_admin": 0
+    },
+    {
+      "id": 3,
+      "name": "Extreme Sales & Services",
+      "email": "aayu.panchal61@gmail.com",
+      "password": "$2b$10$HZymna5OipUUowpOmN9WoOJqiRk5XxFlJ9Vc5rftgzfGs1FVhx0KW",
+      "is_admin": 0
+    }
+  ],
+  "activity": [
+    {
+      "id": 1,
+      "user_id": 2,
+      "email": "aayu.panchal06@gmail.com",
+      "name": "Aayush Deepak Panchal",
+      "time": "2025-09-18T13:20:19.549Z"
+    },
+    {
+      "id": 2,
+      "user_id": 2,
+      "email": "aayu.panchal06@gmail.com",
+      "name": "Aayush Deepak Panchal",
+      "time": "2025-09-18T16:10:12.069Z"
+    },
+    {
+      "id": 3,
+      "user_id": 2,
+      "email": "aayu.panchal06@gmail.com",
+      "name": "Aayush Deepak Panchal",
+      "time": "2025-09-18T16:11:01.233Z"
+    },
+    {
+      "id": 4,
+      "user_id": 2,
+      "email": "aayu.panchal06@gmail.com",
+      "name": "Aayush Deepak Panchal",
+      "time": "2025-09-18T16:29:29.784Z"
+    },
+    {
+      "id": 5,
+      "user_id": 3,
+      "email": "aayu.panchal61@gmail.com",
+      "name": "Extreme Sales & Services",
+      "time": "2025-09-18T16:31:24.408Z"
+    }
+  ]
+}
