@@ -416,7 +416,43 @@ app.post('/api/admin/restore', requireAdmin, (req, res) => {
   return res.status(500).json({ error: 'Server misconfiguration: no database available.' });
 });
 
+// ------------------ Contact Form (send email) ------------------
+const nodemailer = require('nodemailer');
+
+app.post('/api/contact', async (req, res) => {
+  const { name, email, message } = req.body || {};
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: 'All fields required.' });
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.MAIL_USER || 'aluminiportalddvscm@gmail.com',
+        pass: process.env.MAIL_PASS  // Gmail App Password
+      }
+    });
+
+    await transporter.sendMail({
+      from: `"Alumni Portal Contact" <${email}>`,
+      to: 'aluminiportalddvscm@gmail.com',
+      subject: `New contact form message from ${name}`,
+      text: message,
+      html: `<p><b>Name:</b> ${name}</p>
+             <p><b>Email:</b> ${email}</p>
+             <p><b>Message:</b><br>${message}</p>`
+    });
+
+    return res.json({ success: true, message: 'Your message has been sent!' });
+  } catch (err) {
+    console.error('[CONTACT] send error:', err && err.message);
+    return res.status(500).json({ error: 'Failed to send message.' });
+  }
+});
+
 app.listen(PORT, () => console.log('Server running on port', PORT));
+
 
 
 
