@@ -305,4 +305,62 @@ img, .logo, .info-img { max-width: 100%; height: auto; }
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
+/* ===== Horizontal Cards (image left, text right) ===== */
+.card.horizontal {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card.horizontal:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+}
+
+.card-icon {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.card-content h3 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.card-content p {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.card-content .learn-more {
+  font-weight: 700;
+  color: var(--blue-dark);
+  text-decoration: none;
+}
+
+.card-content .learn-more:hover {
+  text-decoration: underline;
+}
+
+/* Stack vertically on small screens */
+@media (max-width: 768px) {
+  .card.horizontal {
+    flex-direction: column;
+    text-align: center;
+  }
+  .card-icon {
+    margin-bottom: 10px;
+  }
+}
+
 
