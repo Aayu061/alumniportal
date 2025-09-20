@@ -54,25 +54,62 @@ function login(){
   .catch(()=>{ msg.textContent = 'Server error.'; });
 }
 
-/* Contact form - save messages (simple) */
+/* Contact form — send to server (minimal) */
 document.addEventListener('DOMContentLoaded', ()=>{
   const contact = document.getElementById('contactForm');
-  if(contact){
-    contact.addEventListener('submit', (e)=>{
-      e.preventDefault();
-      const name = document.getElementById('contactName').value.trim();
-      const email = document.getElementById('contactEmail').value.trim();
-      const message = document.getElementById('contactMessage').value.trim();
-      const out = document.getElementById('contactMsg');
-      if(!name || !email || !message){ out.textContent = 'Please fill all fields.'; out.style.color='red'; return; }
-      const msgs = JSON.parse(localStorage.getItem('messages')) || [];
-      msgs.push({ name, email, message, date: new Date().toISOString() });
+  if (!contact) return;
+
+  contact.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('contactName').value.trim();
+    const email = document.getElementById('contactEmail').value.trim();
+    const message = document.getElementById('contactMessage').value.trim();
+    const out = document.getElementById('contactMsg');
+
+    out.style.color = 'red';
+    if (!name || !email || !message) { out.textContent = 'Please fill all fields.'; return; }
+
+    // prefer server-side send; fallback to localStorage if server fails
+    try {
+      const res = await fetch(`${API_BASE}/api/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message })
+      });
+
+      const data = await res.json().catch(()=>({}));
+
+      if (res.ok) {
+        out.style.color = 'green';
+        out.textContent = data.message || 'Message sent — thank you!';
+        contact.reset();
+        setTimeout(()=>{ out.textContent = ''; }, 2500);
+        return;
+      } else {
+        // server returned an error — show it, then fallback to local save
+        out.textContent = data.error || 'Server rejected request. Message will be saved locally.';
+        console.warn('Contact send failed:', data);
+      }
+    } catch (err) {
+      out.textContent = 'Network error. Saving message locally.';
+      console.warn('Contact network error:', err);
+    }
+
+    // Fallback: save message locally so it isn't lost
+    try {
+      const msgs = JSON.parse(localStorage.getItem('messages') || '[]');
+      msgs.push({ name, email, message, date: new Date().toISOString(), savedFallback: true });
       localStorage.setItem('messages', JSON.stringify(msgs));
-      out.style.color='green'; out.textContent = 'Message sent — thank you!';
+      out.style.color = 'green';
+      out.textContent = 'Message saved locally (offline). We will try to send later.';
       contact.reset();
       setTimeout(()=>{ out.textContent = ''; }, 2500);
-    });
-  }
+    } catch (err) {
+      out.style.color = 'crimson';
+      out.textContent = 'Failed to save message locally.';
+      console.error('Fallback save failed', err);
+    }
+  });
 });
 
 /* helper to fill test credentials (for demo) */
