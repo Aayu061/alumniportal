@@ -200,7 +200,6 @@ body::before {
 /* --- Buttons --- */
 .btn{background:var(--accent);color:white;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:700;box-shadow:0 8px 20px rgba(0,191,166,0.12);transition:transform .12s ease,box-shadow .12s ease}
 .btn:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,191,166,0.18)}
-.btn.ghost{background:transparent;color:var(--blue);border:1px solid rgba(11,99,210,0.12)}
 .small{padding:6px 10px;font-size:13px}
 
 /* --- Utilities --- */
