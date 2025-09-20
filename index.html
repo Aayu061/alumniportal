@@ -126,9 +126,8 @@
     if (navAdmin) navAdmin.style.display = ''; // show admin login so admins can sign in
   } else {
     // logged in: show greeting + logout
-    userNav.innerHTML =
-      <span style="color:white;font-weight:600;margin-right:8px;">Hi, ${current.name}</span>
-      <button class="btn small ghost" id="navLogoutBtn">Logout</button>;
+    userNav.innerHTML ='<span style="color:white;font-weight:600;margin-right:8px;">Hi, ${current.name}</span>
+      <button class="btn small ghost" id="navLogoutBtn">Logout</button>';
 
     // show admin/users only for admin users
     if (current.is_admin) {
