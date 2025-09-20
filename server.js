@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const SECRET = 'alumni_secret_key';
+const SECRET = process.env.SECRET || 'alumni_secret_key';
 
 // Allow CORS for GitHub Pages (user + project) and localhost
 const allowedOrigins = [
@@ -235,17 +235,20 @@ app.post('/api/login', (req, res) => {
   return res.status(500).json({ error: 'Server misconfiguration: no database available.' });
 });
 
-// Middleware: verify admin
 function requireAdmin(req, res, next) {
-  const auth = req.headers.authorization;
-  if (!auth) return res.status(401).json({ error: 'No token.' });
   try {
-    const decoded = jwt.verify(auth.split(' ')[1], SECRET);
-    if (!decoded.is_admin) return res.status(403).json({ error: 'Admin only.' });
+    const auth = req.headers.authorization;
+    if (!auth || typeof auth !== 'string') return res.status(401).json({ error: 'No token.' });
+    const parts = auth.split(' ');
+    if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') return res.status(401).json({ error: 'Invalid authorization format.' });
+    const token = parts[1];
+    const decoded = jwt.verify(token, SECRET);
+    if (!decoded || !decoded.is_admin) return res.status(403).json({ error: 'Admin only.' });
     req.user = decoded;
     next();
-  } catch {
-    res.status(401).json({ error: 'Invalid token.' });
+  } catch (err) {
+    console.error('[AUTH] requireAdmin error:', err && err.message);
+    return res.status(401).json({ error: 'Invalid token.' });
   }
 }
 
@@ -316,7 +319,7 @@ app.get('/api/admin/backup', requireAdmin, (req, res) => {
   if (typeof pool !== 'undefined' && pool) {
     (async () => {
       try {
-        const u = await pool.query('SELECT id, name, email, password, is_admin FROM users ORDER BY id');
+        const u = await pool.query('SELECT id, name, email, is_admin FROM users ORDER BY id');
         const a = await pool.query('SELECT id, user_id, email, name, time FROM login_activity ORDER BY id');
         return res.json({ users: u.rows, activity: a.rows });
       } catch (err) {
@@ -328,7 +331,7 @@ app.get('/api/admin/backup', requireAdmin, (req, res) => {
   }
 
   if (typeof db !== 'undefined' && db) {
-    db.all('SELECT id, name, email, password, is_admin FROM users ORDER BY id', [], (uErr, users) => {
+    db.all('SELECT id, name, email, is_admin FROM users ORDER BY id', [], (uErr, users) => {
       if (uErr) {
         console.error('[BACKUP][SQLITE] users error:', uErr && uErr.message);
         return res.status(500).json({ error: 'Failed to read users.' });
@@ -414,6 +417,7 @@ app.post('/api/admin/restore', requireAdmin, (req, res) => {
 });
 
 app.listen(PORT, () => console.log('Server running on port', PORT));
+
 
 
 
