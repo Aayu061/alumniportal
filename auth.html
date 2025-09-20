@@ -18,6 +18,9 @@
         <form id="loginForm" class="form" onsubmit="event.preventDefault(); login();" style="display:block;">
           <input type="email" id="loginEmail" placeholder="Email" required>
           <input type="password" id="loginPassword" placeholder="Password" required>
+             <label style="display:inline-flex;align-items:center;gap:8px;font-size:0.9rem;margin-left:6px;">
+             <input type="checkbox" id="toggleLoginPassword"> Show
+             </label>
           <button type="submit" class="btn" style="width:100%;margin-top:10px;">Login</button>
           <p id="loginMsg" class="muted"></p>
         </form>
@@ -26,6 +29,9 @@
           <input type="email" id="email" placeholder="Email" required>
           <input type="password" id="password" placeholder="Password" required>
           <input type="password" id="confirmPassword" placeholder="Confirm password" required>
+             <label style="display:inline-flex;align-items:center;gap:8px;font-size:0.9rem;margin-left:6px;">
+             <input type="checkbox" id="toggleRegisterPasswords"> Show
+            </label>
           <button type="submit" class="btn" style="width:100%;margin-top:10px;">Sign Up</button>
           <p id="registerMsg" class="muted"></p>
         </form>
@@ -66,6 +72,26 @@
     </div>
   </div>
 
+<script>
+  // Show/Hide password(s) on auth page
+  const tLogin = document.getElementById('toggleLoginPassword');
+  if (tLogin) {
+    tLogin.addEventListener('change', function () {
+      const f = document.getElementById('loginPassword');
+      if (f) f.type = this.checked ? 'text' : 'password';
+    });
+  }
+
+  const tRegister = document.getElementById('toggleRegisterPasswords');
+  if (tRegister) {
+    tRegister.addEventListener('change', function () {
+      ['password','confirmPassword'].forEach(id => {
+        const field = document.getElementById(id);
+        if (field) field.type = this.checked ? 'text' : 'password';
+      });
+    });
+  }
+</script>
   <script src="script.js"></script>
 </body>
 </html>
