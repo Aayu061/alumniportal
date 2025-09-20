@@ -129,13 +129,14 @@
     userNav.innerHTML = `<span style="color:white;font-weight:600;margin-right:8px;">Hi, ${current.name}</span>
                          <button class="btn small ghost" id="navLogoutBtn">Logout</button>`;
 
-    // show admin/users only for admin users
-    if (current.is_admin) {
-      if (navUsers) navUsers.style.display = '';
-      if (navAdmin) navAdmin.style.display = 'none';
-    } else {
-      if (navUsers) navUsers.style.display = 'none';
-      if (navAdmin) navAdmin.style.display = 'none';
+    // hide dashboard (Users) for admin accounts
+  if (current.is_admin) {
+     if (navUsers) navUsers.style.display = 'none';   // keep hidden for admins
+     if (navAdmin) navAdmin.style.display = 'none';   // hide admin-login link too
+  } else {
+     if (navUsers) navUsers.style.display = '';       // show dashboard for normal users
+     if (navAdmin) navAdmin.style.display = 'none';
+ }
     }
 
     // attach logout handler
