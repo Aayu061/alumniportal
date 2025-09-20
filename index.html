@@ -122,7 +122,7 @@
 
   if (!current || !token) {
     // not logged in -> show login/signup and allow Admin login link
-    userNav.innerHTML ="<a href="auth.html" class="btn small">Login / Signup</a>";
+    userNav.innerHTML ='<a href="auth.html" class="btn small">Login / Signup</a>';
     if (navAdmin) navAdmin.style.display = ''; // show admin login so admins can sign in
   } else {
     // logged in: show greeting + logout
