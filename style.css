@@ -247,5 +247,55 @@ html, body {
 /* ensure images are responsive and don't overflow columns/cards */
 img, .logo, .info-img { max-width: 100%; height: auto; }
 
+/* ===== Override: stacked large info cards (match screenshot) ===== */
+.cards {
+  display: grid !important;
+  grid-template-columns: 1fr !important; /* stacked single column */
+  gap: 20px !important;
+  margin-top: -36px !important; /* small overlap with hero like your design */
+  width: 100%;
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 18px 12px;
+  box-sizing: border-box;
+  z-index: 20;
+}
+
+.card {
+  background: linear-gradient(180deg, #ffffff, rgba(255,255,255,0.98)) !important;
+  padding: 20px 22px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 34px rgba(8,20,40,0.06) !important;
+  border: 1px solid rgba(16,24,40,0.04) !important;
+  transition: transform .18s ease, box-shadow .18s ease !important;
+  transform: translateY(0) !important;
+}
+
+/* subtle lift on hover */
+.card:hover {
+  transform: translateY(-8px) !important;
+  box-shadow: 0 20px 48px rgba(8,20,40,0.09) !important;
+}
+
+/* text sizes and spacing tuned for the large card look */
+.card h3 { font-size: 1.05rem; margin-bottom: 8px; color: var(--dark); font-weight:700; }
+.card p { color: var(--muted); margin-bottom: 12px; font-size: 0.95rem; line-height:1.5; }
+.card ul { margin-left: 1.05rem; color: var(--muted); margin-bottom: 10px; }
+.card .learn-more { color: var(--blue-dark); font-weight:700; text-decoration:none; }
+
+/* maintain responsiveness */
+@media (min-width: 1100px) {
+  .cards { max-width: 1100px; padding: 24px 12px; gap: 24px; }
+  .card { padding: 24px 26px; }
+}
+
+/* If you want later: enable three-column cards on very wide screens by uncommenting */
+/*
+@media (min-width: 1400px) {
+  .cards { grid-template-columns: repeat(3, 1fr); gap: 28px; }
+}
+*/
+
 
 
