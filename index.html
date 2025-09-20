@@ -25,6 +25,7 @@
           <a href="contact.html">Contact Us</a>
           <a id="nav-users" href="users.html" class="btn ghost small">Users</a>
           <a id="nav-admin" href="admin-login.html" class="btn ghost small">Admin</a>
+          <a id="nav-dashboard" href="welcome.html" class="btn ghost small" style="display:none;">Dashboard</a>
         </div>
         <div style="margin-left:auto;display:flex;align-items:center;gap:10px;min-width:220px;justify-content:flex-end;">
           <span id="userNav" style="font-weight:600;color:#2563eb;"></span>
@@ -111,10 +112,12 @@
   const userNav = document.getElementById('userNav');
   const navUsers = document.getElementById('nav-users');
   const navAdmin = document.getElementById('nav-admin');
+  const navDashboard = document.getElementById('nav-dashboard');
 
   // defensive: hide admin/user links until we decide
   if (navUsers) navUsers.style.display = 'none';
   if (navAdmin) navAdmin.style.display = 'none';
+  if (navDashboard) navDashboard.style.display = 'none';
 
   const current = JSON.parse(localStorage.getItem('currentUser') || 'null');
   const token = localStorage.getItem('token');
@@ -132,9 +135,11 @@
     if (current.is_admin) {
       if (navUsers) navUsers.style.display = '';
       if (navAdmin) navAdmin.style.display = 'none';
+      if (navDashboard) navDashboard.style.display = 'none';
     } else {
       if (navUsers) navUsers.style.display = 'none';
       if (navAdmin) navAdmin.style.display = 'none';
+      if (navDashboard) navDashboard.style.display = '';
     }
 
     // attach logout handler
