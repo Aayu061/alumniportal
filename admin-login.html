@@ -13,7 +13,10 @@
       <h2 style="text-align:center; margin-bottom: 18px; font-weight: bold;">Admin Login</h2>
       <form id="adminLoginForm" class="form" onsubmit="event.preventDefault(); adminLogin();">
         <input type="email" id="adminEmail" placeholder="Admin Email" value="aluminiportalddvscm@gmail.com" required style="margin-bottom:14px;">
-        <input type="password" id="adminPassword" placeholder="Password" required style="margin-bottom:18px;">
+        <input type="password" id="adminPassword" placeholder="Password" required style="margin-bottom:8px;">
+            <div style="margin-bottom:18px; font-size:0.95rem;">
+              <input type="checkbox" id="toggleAdminPassword" aria-label="Show password"> <label for="toggleAdminPassword">Show password</label>
+            </div>
         <button type="submit" class="btn" style="width:100%;">Login</button>
         <p id="adminLoginMsg" class="muted"></p>
       </form>
@@ -66,9 +69,19 @@
       msg.textContent = 'Server error.';
     });
   }
+
+  // show / hide admin password (minimal)
+const toggleAdminPassword = document.getElementById('toggleAdminPassword');
+if (toggleAdminPassword) {
+  toggleAdminPassword.addEventListener('change', () => {
+    const f = document.getElementById('adminPassword');
+    if (f) f.type = toggleAdminPassword.checked ? 'text' : 'password';
+  });
+}
 </script>
 </body>
 </html>
+
 
 
 
