@@ -1,0 +1,73 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Admin",
+      "email": "admin@admin.com",
+      "is_admin": true
+    },
+    {
+      "id": 2,
+      "name": "Admin",
+      "email": "aluminiportalddvscm@gmail.com",
+      "is_admin": true
+    },
+    {
+      "id": 3,
+      "name": "Aayush Deepak Panchal",
+      "email": "aayu.panchal06@gmail.com",
+      "is_admin": false
+    }
+  ],
+  "activity": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "email": "admin@admin.com",
+      "name": "Admin",
+      "time": "2025-09-19T18:25:27.957Z"
+    },
+    {
+      "id": 2,
+      "user_id": 2,
+      "email": "aluminiportalddvscm@gmail.com",
+      "name": "Admin",
+      "time": "2025-09-19T19:14:31.649Z"
+    },
+    {
+      "id": 3,
+      "user_id": 3,
+      "email": "aayu.panchal06@gmail.com",
+      "name": "Aayush Deepak Panchal",
+      "time": "2025-09-19T19:19:48.746Z"
+    },
+    {
+      "id": 4,
+      "user_id": 2,
+      "email": "aluminiportalddvscm@gmail.com",
+      "name": "Admin",
+      "time": "2025-09-19T19:20:36.545Z"
+    },
+    {
+      "id": 5,
+      "user_id": 2,
+      "email": "aluminiportalddvscm@gmail.com",
+      "name": "Admin",
+      "time": "2025-09-20T05:54:15.600Z"
+    },
+    {
+      "id": 6,
+      "user_id": 3,
+      "email": "aayu.panchal06@gmail.com",
+      "name": "Aayush Deepak Panchal",
+      "time": "2025-09-20T06:44:19.939Z"
+    },
+    {
+      "id": 7,
+      "user_id": 2,
+      "email": "aluminiportalddvscm@gmail.com",
+      "name": "Admin",
+      "time": "2025-09-20T08:33:31.353Z"
+    }
+  ]
+}
