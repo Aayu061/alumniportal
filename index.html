@@ -120,6 +120,16 @@
   const current = JSON.parse(localStorage.getItem('currentUser') || 'null');
   const token = localStorage.getItem('token');
 
+  // If an admin is already logged in, redirect away from the user auth page
+  // (prevents admins from accidentally using the user login/signup UI)
+  try {
+    if (current && current.is_admin) {
+      window.location.href = '/admin.html'; // change if your admin page path differs
+    }
+  } catch (e) {
+    console.debug('role check failed', e);
+  }
+
   if (!current || !token) {
     // not logged in -> show login/signup and allow Admin login link
     userNav.innerHTML = `<a href="auth.html" class="btn small">Login / Signup</a>`;
@@ -129,14 +139,15 @@
     userNav.innerHTML = `<span style="color:white;font-weight:600;margin-right:8px;">Hi, ${current.name}</span>
                          <button class="btn small ghost" id="navLogoutBtn">Logout</button>`;
 
-    // hide dashboard (Users) for admin accounts
-  if (current.is_admin) {
-     if (navUsers) navUsers.style.display = 'none';   // keep hidden for admins
-     if (navAdmin) navAdmin.style.display = 'none';   // hide admin-login link too
-  } else {
-     if (navUsers) navUsers.style.display = '';       // show dashboard for normal users
-     if (navAdmin) navAdmin.style.display = 'none';
- }
+    // show/hide nav links depending on role
+    if (current.is_admin) {
+      // hide dashboard for admins
+      if (navUsers) navUsers.style.display = 'none';
+      if (navAdmin) navAdmin.style.display = 'none';
+    } else {
+      // normal user -> show users dashboard, hide admin login
+      if (navUsers) navUsers.style.display = '';
+      if (navAdmin) navAdmin.style.display = 'none';
     }
 
     // attach logout handler
@@ -150,5 +161,6 @@
     }
   }
 </script>
+
 </body>
 </html>
