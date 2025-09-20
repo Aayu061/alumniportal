@@ -170,19 +170,11 @@ body::before {
 .info-card{padding:20px;border-radius:12px}
 .info-img{width:100%;border-radius:8px;margin-top:12px}
 
-/* --- Footer --- */
-/* --- Freeze footer at bottom across all pages --- */
-.site-footer {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  z-index: 50;
-}
 
-/* Prevent overlap with footer */
-main {
-  padding-bottom: 80px; /* adjust if footer height changes */
+/* --- Footer --- */
+.site-footer {
+  width: 100%;
+  margin-top: 40px; /* breathing space above footer */
 }
 
 /* --- Auth Page --- */
@@ -255,8 +247,5 @@ html, body {
 /* ensure images are responsive and don't overflow columns/cards */
 img, .logo, .info-img { max-width: 100%; height: auto; }
 
-/* footer safety: if footer height changes, main padding-bottom ensures content visible */
-@media (max-width: 700px) {
-  main { padding-bottom: 120px; }
-}
+
 
