@@ -118,7 +118,7 @@ body::before {
 
 /* --- Hero --- */
 .hero{position:relative;min-height:56vh;display:flex;align-items:center}
-.hero-bg{position:absolute;inset:0;background-image:url('./47343af83faea5196c3b6cc823b7a2e4.jpg');background-size:cover;background-position:center;filter:brightness(0.45);z-index:0}
+.hero-bg{position:absolute;inset:0;background-image:url('./47343af83faea5196c3b6cc823b7a2e4\ \(1\).jpg');background-size:cover;background-position:center;filter:brightness(0.45);z-index:0}
 .hero-content{position:relative;z-index:2;color:white;padding:40px 0}
 .fade-up{animation:fadeUp .7s ease both}
 .fade-up.delay{animation-delay:.15s}
