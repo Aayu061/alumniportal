@@ -17,21 +17,24 @@
         <h2 id="authTitle" style="text-align:center; margin-bottom: 18px; font-weight: bold;">Login</h2>
         <form id="loginForm" class="form" onsubmit="event.preventDefault(); login();" style="display:block;">
           <input type="email" id="loginEmail" placeholder="Email" required>
-          <input type="password" id="loginPassword" placeholder="Password" required>
-             <label style="display:inline-flex;align-items:center;gap:8px;font-size:0.9rem;margin-left:6px;">
-             <input type="checkbox" id="toggleLoginPassword"> Show password
-             </label>
+          <div style="position:relative; margin-bottom:14px;">
+            <input type="password" id="loginPassword" placeholder="Password" required style="width:100%; padding-right:40px;">
+            <span id="toggleLoginPassword" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer;">👁️</span>
+          </div>
           <button type="submit" class="btn" style="width:100%;margin-top:10px;">Login</button>
           <p id="loginMsg" class="muted"></p>
         </form>
         <form id="registerForm" class="form" onsubmit="register(event)" style="display:none;">
           <input type="text" id="name" placeholder="Full name" required>
           <input type="email" id="email" placeholder="Email" required>
-          <input type="password" id="password" placeholder="Password" required>
-          <input type="password" id="confirmPassword" placeholder="Confirm password" required>
-             <label style="display:inline-flex;align-items:center;gap:8px;font-size:0.9rem;margin-left:6px;">
-             <input type="checkbox" id="toggleRegisterPasswords"> Show password
-            </label>
+          <div style="position:relative; margin-bottom:14px;">
+            <input type="password" id="password" placeholder="Password" required style="width:100%; padding-right:40px;">
+            <span id="togglePassword" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer;">👁️</span>
+          </div>
+          <div style="position:relative; margin-bottom:14px;">
+            <input type="password" id="confirmPassword" placeholder="Confirm password" required style="width:100%; padding-right:40px;">
+            <span id="toggleConfirmPassword" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer;">👁️</span>
+          </div>
           <button type="submit" class="btn" style="width:100%;margin-top:10px;">Sign Up</button>
           <p id="registerMsg" class="muted"></p>
         </form>
@@ -73,24 +76,25 @@
   </div>
 
 <script>
-  // Show/Hide password(s) on auth page
-  const tLogin = document.getElementById('toggleLoginPassword');
-  if (tLogin) {
-    tLogin.addEventListener('change', function () {
-      const f = document.getElementById('loginPassword');
-      if (f) f.type = this.checked ? 'text' : 'password';
+// Eye toggle for passwords
+function setupEyeToggle(inputId, toggleId) {
+  const toggle = document.getElementById(toggleId);
+  const input = document.getElementById(inputId);
+  if (toggle && input) {
+    toggle.addEventListener('click', () => {
+      if (input.type === 'password') {
+        input.type = 'text';
+        toggle.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        toggle.textContent = '👁️';
+      }
     });
   }
-
-  const tRegister = document.getElementById('toggleRegisterPasswords');
-  if (tRegister) {
-    tRegister.addEventListener('change', function () {
-      ['password','confirmPassword'].forEach(id => {
-        const field = document.getElementById(id);
-        if (field) field.type = this.checked ? 'text' : 'password';
-      });
-    });
-  }
+}
+setupEyeToggle('loginPassword', 'toggleLoginPassword');
+setupEyeToggle('password', 'togglePassword');
+setupEyeToggle('confirmPassword', 'toggleConfirmPassword');
 </script>
   <script src="script.js"></script>
 </body>
