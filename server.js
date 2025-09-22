@@ -22,20 +22,27 @@ const allowedOrigins = [
   'http://localhost:3001'
 ];
 
+
 app.use(cors({
   origin: function (origin, callback) {
-    console.log('[CORS] incoming Origin:', origin);  // NEW
-
+    console.log('[CORS] incoming Origin:', origin);
+    // allow requests with no origin (curl, server-to-server)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) === -1) {
-      console.log('[CORS] origin NOT allowed:', origin);  // NEW
-      return callback(new Error('CORS not allowed from this origin'), false);
+    if (allowedOrigins.includes(origin)) {
+      console.log('[CORS] origin allowed:', origin);
+      return callback(null, true);
     }
 
-    console.log('[CORS] origin allowed:', origin);  // NEW
-    return callback(null, true);
-  }
+    console.log('[CORS] origin NOT allowed:', origin);
+    // Do NOT pass an Error object here — return false so the preflight still responds correctly.
+    return callback(null, false);
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 app.use(bodyParser.json());
 
@@ -452,6 +459,7 @@ app.post('/api/contact', async (req, res) => {
 });
 
 app.listen(PORT, () => console.log('Server running on port', PORT));
+
 
 
 
