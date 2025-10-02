@@ -1,5 +1,5 @@
 // Replace localhost with your Render service URL
-const API_BASE = 'https://alumniportal-jg5p.onrender.com';
+const API_BASE = window.API_BASE || 'http://localhost:3001';
 
 /* Central script for auth, users, contact - localStorage only */
 
