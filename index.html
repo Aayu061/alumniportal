@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="./WhatsApp Image 2025-09-15 at 23.23.46-Photoroom.webp">
+  <!-- preconnect to external image host to speed up hero/info image loads -->
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+  <!-- preload the main logo (small critical image) -->
+  <link rel="preload" href="./WhatsApp Image 2025-09-15 at 23.23.46.webp" as="image">
   <title>Alumni Portal</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -48,7 +52,7 @@
 
 <section class="cards container">
   <div class="card horizontal" id="networking">
-    <img src="./ChatGPT Image Sep 20, 2025, 06_38_09 PM.webp" alt="Alumni Networking" class="card-icon">
+    <img src="./ChatGPT Image Sep 20, 2025, 06_38_09 PM.webp" alt="Alumni Networking" class="card-icon" loading="lazy" decoding="async">
     <div class="card-content">
       <h3 id="networking-title">Alumni Networking</h3>
       <p>Find and connect with batchmates, form interest groups (region, department, year) and expand your professional circle. Use the directory to search by batch, skills or location.</p>
@@ -61,7 +65,7 @@
   </div>
 
   <div class="card horizontal" id="mentoring">
-    <img src="./WhatsApp Image 2025-09-20 at 18.49.23.webp" alt="Mentoring" class="card-icon">
+    <img src="./WhatsApp Image 2025-09-20 at 18.49.23.webp" alt="Mentoring" class="card-icon" loading="lazy" decoding="async">
     <div class="card-content">
       <h3 id="mentoring-title">Mentoring</h3>
       <p>Experienced alumni offer guidance, mentorship and career advice to students and fresh grads. Sign up as a mentor or request a mentor based on skillset and availability.</p>
@@ -74,7 +78,7 @@
   </div>
 
   <div class="card horizontal" id="careers">
-    <img src="./WhatsApp Image 2025-09-20 at 18.48.49.webp" alt="Career Updates" class="card-icon">
+    <img src="./WhatsApp Image 2025-09-20 at 18.48.49.webp" alt="Career Updates" class="card-icon" loading="lazy" decoding="async">
     <div class="card-content">
       <h3 id="careers-title">Career Updates</h3>
       <p>Access hand-picked job openings, internships and skill-building programs shared by alumni and partner organisations. Employers can post opportunities for alumni and current students.</p>
@@ -94,7 +98,7 @@
           <li>Give or receive mentorship</li>
           <li>Exclusive career updates</li>
         </ul>
-        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=800&auto=format&fit=crop" alt="banner" class="info-img">
+        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=800&auto=format&fit=crop" alt="banner" class="info-img" loading="lazy" decoding="async">
       </div>
     </section>
   </main>
@@ -105,7 +109,7 @@
   </div>
 </footer>
 
-<script src="script.js"></script>
+<script src="script.js" defer></script>
 <script>
   // toggle nav links based on logged-in user and role
   const userNav = document.getElementById('userNav');
@@ -118,16 +122,24 @@
   if (navAdmin) navAdmin.style.display = 'none';
   if (navDashboard) navDashboard.style.display = 'none';
 
-  const current = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  let current = null;
+  try {
+    current = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  } catch (e) {
+    // corrupted JSON in localStorage — clear it and continue safely
+    console.warn('Clearing malformed currentUser from localStorage', e);
+    localStorage.removeItem('currentUser');
+    current = null;
+  }
   const token = localStorage.getItem('token');
 
   if (!current || !token) {
     // not logged in -> show login/signup and allow Admin login link
-    userNav.innerHTML ='<a href="auth.html" class="btn small">Login / Signup</a>';
+    userNav.innerHTML = '<a href="auth.html" class="btn small">Login / Signup</a>';
     if (navAdmin) navAdmin.style.display = ''; // show admin login so admins can sign in
   } else {
     // logged in: show greeting + logout
-    userNav.innerHTML =`<span style="color:white;font-weight:600;margin-right:8px;">Hi, ${current.name}</span>
+    userNav.innerHTML = `<span style="color:white;font-weight:600;margin-right:8px;">Hi, ${current.name}</span>
       <button class="btn small ghost" id="navLogoutBtn">Logout</button>`;
 
     // show admin/users only for admin users
