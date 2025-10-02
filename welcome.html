@@ -3,15 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg">
+  <link rel="icon" type="image/png" href="./WhatsApp Image 2025-09-15 at 23.23.46.webp">
   <title>Welcome - Alumni Portal</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- non-blocking stylesheet load -->
+<link rel="preload" href="style.css" as="style" onload="this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="style.css"></noscript>
+
+<meta name="description" content="Alumni Portal — connect with batchmates, mentorship and career updates.">
+<!-- preload logo to help LCP -->
+<link rel="preload" href="./WhatsApp Image 2025-09-15 at 23.23.46.webp" as="image">
+<link rel="icon" type="image/webp" href="./WhatsApp Image 2025-09-15 at 23.23.46.webp">
 </head>
 <body>
   <header class="site-header small">
     <div class="container header-inner">
       <div class="brand">
-        <img src="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg" alt="Logo" class="logo">
+        <img src="./WhatsApp Image 2025-09-15 at 23.23.46.webp"
+     alt="Alumni Portal logo"
+     class="logo"
+     loading="lazy"
+     width="56" height="56">
         <div>
           <h1>Alumni Portal</h1>
           <p class="tagline">Welcome Dashboard</p>
@@ -28,7 +39,7 @@
     <section class="welcome-box fade-up">
       <h2 id="welcomeUser">Hello, Alumni!</h2>
       <p>Welcome to your dashboard. From here you can explore networking opportunities, mentoring sessions and career updates.</p><br>
-     <h2 id="welcomeUser">Please Fill Below Google Form For Alumni Information</h2><br>
+     <h2>Please Fill Below Google Form For Alumni Information</h2><br>
 <p>
   <a href="https://forms.gle/s5dr4LcvpWF9iTsaA" target="_blank" rel="noopener noreferrer">
     <b>Alumni Information Link</b>
@@ -40,19 +51,22 @@
   </main>
   
   <script>
-    const current = JSON.parse(localStorage.getItem('currentUser'));
-    if (!current) {
+    const current = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!current || !current.name) {
       window.location.href = 'auth.html';
     } else {
-      document.getElementById('welcomeUser').textContent = 'Hello, ' + current.name + ' 👋';
+      const el = document.getElementById('welcomeUser');
+      if (el) el.textContent = `Hello, ${current.name} 👋`;
     }
+
     function logout() {
       localStorage.removeItem('currentUser');
       window.location.href = 'index.html';
     }
   </script>
+  
+  <footer class="site-footer">
+    <a href="index.html" class="btn">Back to Home</a>
+  </footer>
 </body>
-   <footer class="site-footer">
-  <a href="index.html" class="btn">Back to Home</a>
-</footer>
 </html>
