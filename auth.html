@@ -3,36 +3,42 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="./WhatsApp Image 2025-09-15 at 23.23.46.webp">
   <title>Auth - Alumni Portal</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- non-blocking stylesheet load -->
+<link rel="preload" href="style.css" as="style" onload="this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="style.css"></noscript>
+
+<meta name="description" content="Auth — Alumni Portal. Login or sign up to join the alumni network, mentorships and career opportunities.">
+<!-- preload logo to help LCP (if same image used site-wide) -->
+<link rel="preload" href="./WhatsApp Image 2025-09-15 at 23.23.46.webp" as="image">
+<link rel="icon" type="image/webp" href="./WhatsApp Image 2025-09-15 at 23.23.46.webp">
 </head>
 
 <body class="auth-page" style="background: linear-gradient(120deg, #e0e7ff 0%, #f5f7fb 100%); min-height:100vh;">
   <div class="container" style="max-width: 440px; margin: 48px auto;">
     <div style="background: linear-gradient(135deg, #ffffff 60%, #e3f6f5 100%); border-radius: 18px; box-shadow: 0 8px 32px rgba(17,34,60,0.13); padding: 36px 30px 30px 30px; position:relative; border: 1.5px solid #e0e7ff;">
   <a href="index.html" class="btn ghost small" style="position:absolute; left:20px; top:20px; text-decoration:none;">← Back</a>
-      <div style="height:38px;"></div>
+      <div class="spacer" aria-hidden="true"></div>
       <div id="authCardContent">
         <h2 id="authTitle" style="text-align:center; margin-bottom: 18px; font-weight: bold;">Login</h2>
         <form id="loginForm" class="form" onsubmit="event.preventDefault(); login();" style="display:block;">
-          <input type="email" id="loginEmail" placeholder="Email" required>
+          <input type="email" id="loginEmail" name="email" placeholder="Email" required autocomplete="email" aria-label="Email" autocapitalize="off">
           <div style="position:relative; margin-bottom:14px;">
-            <input type="password" id="loginPassword" placeholder="Password" required style="width:100%; padding-right:40px;">
+            <input type="password" id="loginPassword" name="password" placeholder="Password" required autocomplete="current-password" aria-label="Password" style="width:100%; padding-right:40px;">
             <span id="toggleLoginPassword" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer;">👁️</span>
           </div>
           <button type="submit" class="btn" style="width:100%;margin-top:10px;">Login</button>
           <p id="loginMsg" class="muted"></p>
         </form>
         <form id="registerForm" class="form" onsubmit="register(event)" style="display:none;">
-          <input type="text" id="name" placeholder="Full name" required>
-          <input type="email" id="email" placeholder="Email" required>
+          <input type="text" id="name" name="name" placeholder="Full name" required autocomplete="name" aria-label="Full name">
+          <input type="email" id="email" name="email" placeholder="Email" required autocomplete="email" aria-label="Email">
           <div style="position:relative; margin-bottom:14px;">
-            <input type="password" id="password" placeholder="Password" required style="width:100%; padding-right:40px;">
+            <input type="password" id="password" name="password" placeholder="Password" required autocomplete="new-password" aria-label="Password" style="width:100%; padding-right:40px;">
             <span id="togglePassword" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer;">👁️</span>
           </div>
           <div style="position:relative; margin-bottom:14px;">
-            <input type="password" id="confirmPassword" placeholder="Confirm password" required style="width:100%; padding-right:40px;">
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm password" required autocomplete="new-password" aria-label="Confirm password" style="width:100%; padding-right:40px;">
             <span id="toggleConfirmPassword" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer;">👁️</span>
           </div>
           <button type="submit" class="btn" style="width:100%;margin-top:10px;">Sign Up</button>
