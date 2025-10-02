@@ -3,15 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg">
+  <link rel="icon" type="image/png" href="./WhatsApp Image 2025-09-15 at 23.23.46.webp">
   <title>Contact Us - Alumni Portal</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- non-blocking stylesheet load -->
+<link rel="preload" href="style.css" as="style" onload="this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="style.css"></noscript>
+
+<meta name="description" content="Contact the Alumni Portal — get in touch with D. D. Vispute College alumni office for queries, events and collaborations.">
+<!-- preload logo to help Largest Contentful Paint (LCP) -->
+<link rel="preload" href="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg" as="image">
+<link rel="icon" type="image/jpeg" href="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg">
 </head>
 <body>
   <header class="site-header small">
     <div class="container header-inner">
       <div class="brand">
-        <img src="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg" alt="Logo" class="logo">
+        <img src="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg"
+          alt="D. D. Vispute College logo"
+          class="logo"
+          loading="lazy"
+          width="56" height="56">
         <div>
           <h1>Alumni Portal</h1>
           <p class="tagline">Contact Us</p>
@@ -42,7 +53,7 @@
           <label for="contactMessage" style="font-weight:500;">Your Message</label>
           <textarea id="contactMessage" placeholder="Your Message" rows="5" required style="width:100%;padding:12px 14px;font-size:1.08rem;border-radius:8px;border:1px solid #d1d5db;margin-bottom:18px;resize:vertical;"></textarea>
           <button type="submit" class="btn" style="width:100%;background:linear-gradient(90deg,#6366f1,#7b83e6);color:#fff;font-weight:600;font-size:1rem;">Send</button>
-          <p id="contactMsg" class="muted"></p>
+          <p id="contactMsg" class="muted" role="status" aria-live="polite"></p>
         </form>
         <div style="margin-top:18px;font-size:15px;"><b>Office Hours:</b> Mon - Fri, 9:00 AM — 5:00 PM</div>
       </section>
@@ -50,16 +61,24 @@
       <section style="flex:1 1 340px;max-width:420px;background:rgba(255,255,255,0.98);border-radius:16px;box-shadow:0 8px 32px rgba(110,168,254,0.10);padding:32px 28px 24px 28px;min-width:320px;">
         <h3 style="font-size:1.1rem;font-weight:600;margin-bottom:10px;">Visit us</h3>
         <div style="color:#374151;font-size:15px;margin-bottom:10px;">D. D. Vispute College of Science, Commerce &amp; Management - Pune, Maharashtra</div>
-        <iframe src="https://www.google.com/maps?q=18.99025,73.13611&z=15&output=embed" width="100%" height="140" style="border-radius:8px;border:1px solid #e5e7eb;margin-bottom:12px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <iframe
+          title="Map — D. D. Vispute College location"
+          src="https://www.google.com/maps?q=18.99025,73.13611&z=15&output=embed"
+          width="100%"
+          height="140"
+          style="border-radius:8px;border:1px solid #e5e7eb;margin-bottom:12px;"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"></iframe>
         <div style="margin-bottom:8px;"><b>Phone</b><br><a href="tel:+912012345678" style="color:#2563eb;text-decoration:none;">+91 20 1234 5678</a></div>
         <div style="margin-bottom:8px;"><b>Email</b><br><a href="mailto:info@ddvispute.edu.in" style="color:#2563eb;text-decoration:none;">info@ddvispute.edu.in</a></div>
       </section>
     </div>
   </main>
-
-  <script src="script.js"></script>
+  <script src="script.js" defer></script>
 </body>
 </html>
+
 
 
 
