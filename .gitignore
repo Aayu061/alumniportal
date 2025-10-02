@@ -1,0 +1,5 @@
+# Local DB and secrets
+alumni.db
+backup.json
+.env
+node_modules/
