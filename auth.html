@@ -75,26 +75,230 @@
     </div>
   </div>
 
-<script>
-// Eye toggle for passwords
-function setupEyeToggle(inputId, toggleId) {
-  const toggle = document.getElementById(toggleId);
-  const input = document.getElementById(inputId);
-  if (toggle && input) {
-    toggle.addEventListener('click', () => {
-      if (input.type === 'password') {
-        input.type = 'text';
-        toggle.textContent = '🙈';
-      } else {
-        input.type = 'password';
-        toggle.textContent = '👁️';
+  <script>
+/*
+ Advanced accessible password toggles + strength & confirm check
+ - keyboard accessible
+ - aria attributes for screen-readers
+ - temporary reveal (auto-hide after revealTimeout ms)
+ - simple strength meter for signup password (inserted dynamically)
+ - live "match" hint for confirm password
+*/
+
+(function () {
+  const revealTimeout = 5000; // ms to auto-hide after reveal
+  const toggles = {}; // store timers per input
+
+  // Utility: make element keyboard-activated (space/enter)
+  function makeKeyboardActivatable(el, handler) {
+    el.tabIndex = 0;
+    el.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        handler(e);
       }
     });
   }
-}
-setupEyeToggle('loginPassword', 'toggleLoginPassword');
-setupEyeToggle('password', 'togglePassword');
-setupEyeToggle('confirmPassword', 'toggleConfirmPassword');
+
+  // Get element safely
+  function $id(id) { return document.getElementById(id); }
+
+  // Create an accessible toggle button next to a target input (if a span exists, upgrade it)
+  function enhanceToggle(inputId, toggleId) {
+    const input = $id(inputId);
+    const existing = $id(toggleId);
+
+    if (!input) return;
+
+    // Build button (replaces or uses the existing element)
+    let btn;
+    if (existing && existing.tagName.toLowerCase() === 'span') {
+      // convert span into a role=button for accessibility
+      btn = existing;
+      btn.setAttribute('role', 'button');
+    } else if (existing && existing.tagName.toLowerCase() === 'button') {
+      btn = existing;
+    } else {
+      // create a button and insert after input
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'password-toggle';
+      if (input.nextSibling) input.parentNode.insertBefore(btn, input.nextSibling);
+      else input.parentNode.appendChild(btn);
+    }
+
+    // style visually minimal (user can move to CSS later)
+    btn.style.background = 'transparent';
+    btn.style.border = 'none';
+    btn.style.cursor = 'pointer';
+    btn.style.padding = '4px 6px';
+    btn.style.fontSize = '16px';
+    btn.style.lineHeight = '1';
+    btn.style.userSelect = 'none';
+    btn.style.marginLeft = '6px';
+
+    // Accessibility attributes
+    btn.setAttribute('aria-controls', inputId);
+    btn.setAttribute('aria-pressed', 'false');
+    btn.setAttribute('aria-label', 'Show password');
+    btn.classList.add('password-toggle');
+
+    // Visual label (emoji) but also keep accessible label
+    btn.textContent = '👁️';
+
+    // click handler
+    function toggleOnce(e) {
+      const isHidden = input.type === 'password';
+      if (isHidden) {
+        input.type = 'text';
+        btn.textContent = '🙈';
+        btn.setAttribute('aria-pressed', 'true');
+        btn.setAttribute('aria-label', 'Hide password');
+        // set timer to auto-hide
+        clearExistingTimer(inputId);
+        toggles[inputId] = setTimeout(() => {
+          try { input.type = 'password'; } catch (err) {}
+          btn.textContent = '👁️';
+          btn.setAttribute('aria-pressed', 'false');
+          btn.setAttribute('aria-label', 'Show password');
+        }, revealTimeout);
+      } else {
+        // hide immediately
+        input.type = 'password';
+        btn.textContent = '👁️';
+        btn.setAttribute('aria-pressed', 'false');
+        btn.setAttribute('aria-label', 'Show password');
+        clearExistingTimer(inputId);
+      }
+      // keep the focus on input for convenience
+      try { input.focus(); } catch (err) {}
+    }
+
+    // clear timer helper
+    function clearExistingTimer(id) {
+      if (toggles[id]) {
+        clearTimeout(toggles[id]);
+        toggles[id] = null;
+      }
+    }
+
+    // attach handlers (click + keyboard)
+    btn.addEventListener('click', toggleOnce);
+    makeKeyboardActivatable(btn, toggleOnce);
+  }
+
+  // Simple password strength estimator (0..4) based on length and char variety
+  function estimatePasswordStrength(pw) {
+    if (!pw) return 0;
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (pw.length >= 12) score++;
+    // variety checks
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+    if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) score++;
+    return Math.min(score, 4);
+  }
+
+  function strengthLabel(score) {
+    switch(score) {
+      case 0: return {text: 'Very weak', color: '#e11d48'}; // red
+      case 1: return {text: 'Weak', color: '#fb923c'}; // orange
+      case 2: return {text: 'Okay', color: '#f59e0b'}; // amber
+      case 3: return {text: 'Good', color: '#10b981'}; // green
+      case 4: return {text: 'Strong', color: '#059669'}; // darker green
+      default: return {text: '', color: '#666'};
+    }
+  }
+
+  // Insert a strength meter element after an input if not already present
+  function ensureStrengthMeter(input) {
+    if (!input) return null;
+    let meter = input.parentNode.querySelector('.pw-strength');
+    if (!meter) {
+      meter = document.createElement('div');
+      meter.className = 'pw-strength';
+      meter.style.fontSize = '13px';
+      meter.style.marginTop = '6px';
+      meter.innerHTML = '<span class="pw-strength-bar" aria-hidden="true" style="display:inline-block;height:8px;vertical-align:middle;border-radius:6px;margin-right:8px;width:80px;background:#eee"></span><span class="pw-strength-text" style="vertical-align:middle;color:#333"> </span>';
+      input.parentNode.appendChild(meter);
+    }
+    return meter;
+  }
+
+  // Update strength meter
+  function updateStrengthMeter(input) {
+    const meter = ensureStrengthMeter(input);
+    if (!meter) return;
+    const pw = input.value || '';
+    const score = estimatePasswordStrength(pw);
+    const info = strengthLabel(score);
+    const bar = meter.querySelector('.pw-strength-bar');
+    const text = meter.querySelector('.pw-strength-text');
+    // show proportional fill
+    const pct = (score / 4) * 100;
+    bar.style.background = '#eee';
+    bar.style.position = 'relative';
+    bar.innerHTML = '<span aria-hidden="true" style="display:block;height:100%;width:' + pct + '%;background:' + info.color + ';border-radius:6px;"></span>';
+    text.textContent = info.text;
+    text.style.color = info.color;
+  }
+
+  // Live confirm-match checker
+  function attachConfirmMatch(passwordInput, confirmInput) {
+    if (!passwordInput || !confirmInput) return;
+    // create hint if missing
+    let hint = confirmInput.parentNode.querySelector('.pw-match-hint');
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.className = 'pw-match-hint';
+      hint.style.fontSize = '13px';
+      hint.style.marginTop = '6px';
+      confirmInput.parentNode.appendChild(hint);
+    }
+    function update() {
+      const pw = passwordInput.value || '';
+      const c = confirmInput.value || '';
+      if (!c) {
+        hint.textContent = '';
+        return;
+      }
+      if (pw === c) {
+        hint.textContent = 'Passwords match';
+        hint.style.color = '#059669';
+      } else {
+        hint.textContent = 'Passwords do not match';
+        hint.style.color = '#e11d48';
+      }
+    }
+    passwordInput.addEventListener('input', update);
+    confirmInput.addEventListener('input', update);
+  }
+
+  // Enhance all toggles and attach meters
+  const mapping = [
+    { inputId: 'loginPassword', toggleId: 'toggleLoginPassword', meter: false },
+    { inputId: 'password', toggleId: 'togglePassword', meter: true },
+    { inputId: 'confirmPassword', toggleId: 'toggleConfirmPassword', meter: false }
+  ];
+
+  mapping.forEach(m => {
+    enhanceToggle(m.inputId, m.toggleId);
+    if (m.meter) {
+      const inp = $id(m.inputId);
+      updateStrengthMeter(inp);
+      inp.addEventListener('input', () => updateStrengthMeter(inp));
+    }
+  });
+
+  // Attach confirm-match between password & confirmPassword (signup)
+  attachConfirmMatch($id('password'), $id('confirmPassword'));
+
+  // Clean up timers when navigating away
+  window.addEventListener('beforeunload', () => {
+    Object.values(toggles).forEach(t => { if (t) clearTimeout(t); });
+  });
+
+})();
 </script>
   <script src="script.js"></script>
 </body>
