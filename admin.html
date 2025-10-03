@@ -42,80 +42,81 @@
   <!-- load config.js BEFORE any script that uses API_BASE -->
   <script src="config.js"></script>
 
-  <script>
-    // Use config.js window.API_BASE or fallback to localhost for dev
-    const API_BASE = window.API_BASE || 'http://localhost:3001';
+ <script>
+  // Read API base without redeclaring API_BASE constant
+  const API = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : 'http://localhost:3001';
 
-    const current = JSON.parse(localStorage.getItem('currentUser') || 'null');
-    const token = localStorage.getItem('token');
+  const current = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  const token = localStorage.getItem('token');
 
-    // Verify admin role from user object
-    if (!current || current.role !== 'admin' || !token) {
-      window.location.href = 'admin-login.html';
-    }
+  // Accept both shapes: { role: 'admin' } or { is_admin: true }
+  const isAdmin = current && (current.role === 'admin' || current.is_admin === true || current.isAdmin === true);
 
-    async function renderActivity() {
-      try {
-        const resp = await fetch(`${API_BASE}/api/activity`, {
-          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
-        });
+  if (!current || !isAdmin || !token) {
+    // not authenticated as admin -> go to admin login
+    window.location.href = 'admin-login.html';
+  }
 
-        if (!resp.ok) {
-          const err = await resp.json().catch(()=>({ error: 'Unknown server error' }));
-          document.getElementById('adminError').textContent = err.error || 'Server error';
-          document.getElementById('activityTable').style.display = 'none';
-          return;
-        }
-
-        const data = await resp.json();
-        const tbody = document.querySelector('#activityTable tbody');
-        tbody.innerHTML = '';
-
-        if (!Array.isArray(data) || data.length === 0) {
-          document.getElementById('noActivity').style.display = 'block';
-          document.getElementById('activityTable').style.display = 'none';
-          return;
-        }
-
-        document.getElementById('noActivity').style.display = 'none';
-        document.getElementById('activityTable').style.display = 'table';
-
-        data.forEach((a, i) => {
-          // server returns: { id, user_id, email, when_ts }
-          const email = a.email || ('user:' + (a.user_id || 'N/A'));
-          const when = a.when_ts || a.when || a.time;
-          const timeText = when ? new Date(when).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-';
-
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(email)}</td><td>${escapeHtml(timeText)}</td>`;
-          tbody.appendChild(tr);
-        });
-
-      } catch (err) {
-        console.error('Activity fetch error:', err);
-        document.getElementById('adminError').textContent = 'Network or server error.';
-      }
-    }
-
-    // small escaping helper to avoid HTML injection from unexpected values
-    function escapeHtml(str) {
-      return String(str || '').replace(/[&<>"'`=\/]/g, function(s) {
-        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',"/":'&#x2F;','`':'&#96;','=':'&#61;'})[s];
+  async function renderActivity() {
+    try {
+      const resp = await fetch(`${API}/api/activity`, {
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
       });
-    }
 
-    function logout() {
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('token');
-      window.location.href = 'index.html';
-    }
+      if (!resp.ok) {
+        const err = await resp.json().catch(()=>({ error: 'Unknown server error' }));
+        document.getElementById('adminError').textContent = err.error || 'Server error';
+        document.getElementById('activityTable').style.display = 'none';
+        return;
+      }
 
-    renderActivity();
-  </script>
-  <script src="config.js"></script>
+      const data = await resp.json();
+      const tbody = document.querySelector('#activityTable tbody');
+      tbody.innerHTML = '';
+
+      if (!Array.isArray(data) || data.length === 0) {
+        document.getElementById('noActivity').style.display = 'block';
+        document.getElementById('activityTable').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('noActivity').style.display = 'none';
+      document.getElementById('activityTable').style.display = 'table';
+
+      data.forEach((a, i) => {
+        const email = a.email || ('user:' + (a.user_id || 'N/A'));
+        const when = a.when_ts || a.when || a.time;
+        const timeText = when ? new Date(when).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(email)}</td><td>${escapeHtml(timeText)}</td>`;
+        tbody.appendChild(tr);
+      });
+
+    } catch (err) {
+      console.error('Activity fetch error:', err);
+      document.getElementById('adminError').textContent = 'Network or server error.';
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"'`=\/]/g, function(s) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',"/":'&#x2F;','`':'&#96;','=':'&#61;'})[s];
+    });
+  }
+
+  function logout() {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('token');
+    window.location.href = 'index.html';
+  }
+
+  renderActivity();
+ </script>
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
