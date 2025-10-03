@@ -38,7 +38,11 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   message TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Ensure password_hash column exists (for older tables created without it)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
 `;
+
 
 (async () => {
   try {
@@ -57,3 +61,4 @@ CREATE TABLE IF NOT EXISTS contact_messages (
     }
   }
 })();
+
