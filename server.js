@@ -99,6 +99,58 @@ function adminOnly(req, res, next) {
   next();
 }
 
+// ⭐ ADDED: Migration + Admin Seeder
+async function runMigrationsAndSeedAdmin() {
+  try {
+    const migrationSQL = `
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name TEXT,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT,
+        role TEXT DEFAULT 'user',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS login_activity (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        email TEXT,
+        when_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id SERIAL PRIMARY KEY,
+        name TEXT,
+        email TEXT,
+        message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+    `;
+    await dbQuery(migrationSQL);
+
+    // Ensure admin exists (email + password)
+    const adminEmail = 'aluminiportalddvscm@gmail.com';
+    const adminPlain = 'ddvsc@123';
+    const adminName = 'Admin';
+    const hash = await bcrypt.hash(adminPlain, 12);
+
+    await dbQuery(
+      `INSERT INTO users (name, email, password_hash, role, created_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (email)
+       DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role`,
+      [adminName, adminEmail, hash, 'admin']
+    );
+
+    console.log("✅ Migrations applied and admin ensured");
+  } catch (err) {
+    console.error("❌ Migration/seed error:", err);
+  }
+}
+
 // --- Routes ---
 
 // Health check
@@ -205,6 +257,9 @@ app.get('/api/activity', authMiddleware, adminOnly, async (req, res) => {
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
+
+// ⭐ ADDED: run migrations & seed admin on startup
+runMigrationsAndSeedAdmin();
 
 // Start server
 app.listen(PORT, () => console.log('Server running on port', PORT));
