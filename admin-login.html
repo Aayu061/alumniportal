@@ -28,7 +28,8 @@
   </div>
 
 <script>
-  const API_BASE = 'https://alumniportal-jg5p.onrender.com';
+  // Use config.js (already defines window.API_BASE)
+  const API = window.API_BASE || 'http://localhost:3001';
 
   function adminLogin() {
     const emailEl = document.getElementById('adminEmail');
@@ -36,7 +37,7 @@
     const msg = document.getElementById('adminLoginMsg');
 
     if (!emailEl || !passEl || !msg) {
-      console.error('admin-login: missing DOM elements', { emailEl, passEl, msg });
+      console.error('admin-login: missing DOM elements');
       if (msg) { msg.style.color = 'red'; msg.textContent = 'Login form not loaded correctly.'; }
       return;
     }
@@ -45,7 +46,7 @@
     const password = passEl.value;
     msg.style.color = 'red';
 
-    fetch(`${API_BASE}/api/login`, {
+    fetch(`${API}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -56,8 +57,14 @@
         msg.textContent = data.error;
         return;
       }
-      // Save real JWT + user info
-      localStorage.setItem('currentUser', JSON.stringify({ name: data.name, email: data.email, is_admin: data.is_admin }));
+
+      // Save token and user info (support both role and is_admin for compatibility)
+      localStorage.setItem('currentUser', JSON.stringify({ 
+        name: data.name, 
+        email: data.email, 
+        role: data.role || (data.is_admin ? 'admin' : 'user'),
+        is_admin: data.is_admin 
+      }));
       localStorage.setItem('token', data.token);
 
       msg.style.color = 'green';
@@ -70,27 +77,28 @@
     });
   }
 
-// eye icon toggle for admin password
-const toggleAdminPassword = document.getElementById('toggleAdminPassword');
-if (toggleAdminPassword) {
-  toggleAdminPassword.addEventListener('click', () => {
-    const f = document.getElementById('adminPassword');
-    if (f) {
-      if (f.type === 'password') {
-        f.type = 'text';
-        toggleAdminPassword.textContent = '🙈';
-      } else {
-        f.type = 'password';
-        toggleAdminPassword.textContent = '👁️';
+  // eye icon toggle
+  const toggleAdminPassword = document.getElementById('toggleAdminPassword');
+  if (toggleAdminPassword) {
+    toggleAdminPassword.addEventListener('click', () => {
+      const f = document.getElementById('adminPassword');
+      if (f) {
+        if (f.type === 'password') {
+          f.type = 'text';
+          toggleAdminPassword.textContent = '🙈';
+        } else {
+          f.type = 'password';
+          toggleAdminPassword.textContent = '👁️';
+        }
       }
-    }
-  });
-}
+    });
+  }
 </script>
   <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
