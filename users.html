@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg">
+  <link rel="icon" type="image/webp" href="./WhatsApp Image 2025-09-15 at 23.23.46.webp">
   <title>Users - Alumni Portal (Admin)</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -11,7 +11,7 @@
   <header class="site-header small">
     <div class="container header-inner">
       <div class="brand">
-        <img src="./WhatsApp Image 2025-09-15 at 23.23.46.jpeg" alt="Logo" class="logo">
+        <img src="./WhatsApp Image 2025-09-15 at 23.23.46.webp" alt="Logo" class="logo">
         <div>
           <h1>Alumni Portal</h1>
           <p class="tagline">Registered Users</p>
@@ -58,7 +58,7 @@
       <button onclick="exportActivityCSV()" class="btn small ghost">Export CSV</button>
     </div>
     <table id="activityTable" class="users-table" style="margin-top:12px;">
-      <thead><tr><th style="width:64px">#</th><th>Name</th><th>Email</th><th>Login Time</th></tr></thead>
+      <thead><tr><th style="width:64px">#</th><th>Email</th><th>Login Time</th></tr></thead>
       <tbody></tbody>
     </table>
     <p id="noActivity" class="muted">No login activity found.</p>
@@ -74,13 +74,15 @@
   </footer>
 
   <script>
-    // Minimal: use your Render backend
-    const API_BASE = 'https://alumniportal-jg5p.onrender.com';
+    // Use global config.js (do NOT redeclare API_BASE here). Read the value from window.
+    const API = window.API_BASE || 'https://alumniportal-jg5p.onrender.com';
 
     // Auth check: must be admin & have token
     const current = JSON.parse(localStorage.getItem('currentUser') || 'null');
     const token = localStorage.getItem('token');
-    if (!current || !token || !current.is_admin) {
+    // accept either role or is_admin flag for compatibility
+    const isAdmin = current && (current.role === 'admin' || current.is_admin === true || current.isAdmin === true);
+    if (!current || !token || !isAdmin) {
       // Not admin -> redirect to admin login
       window.location.href = 'admin-login.html';
     }
@@ -106,7 +108,7 @@
     // Fetch and render users
     function loadUsers() {
       showError('usersError', '');
-      fetch(`${API_BASE}/api/users`, {
+      fetch(`${API}/api/users`, {
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token }
       })
@@ -128,7 +130,8 @@
         document.getElementById('usersTable').style.display = 'table';
         data.forEach((u, i) => {
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${i+1}</td><td>${u.name}</td><td>${u.email}</td><td>${u.is_admin ? 'Yes' : 'No'}</td>`;
+          // backend returns role (e.g. 'admin' or 'user'), not is_admin
+          tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.email)}</td><td>${u.role === 'admin' ? 'Yes' : 'No'}</td>`;
           tbody.appendChild(tr);
         });
       })
@@ -140,7 +143,7 @@
     // Fetch and render activity
     function loadActivity(){
       showError('adminError', '');
-      fetch(`${API_BASE}/api/activity`, {
+      fetch(`${API}/api/activity`, {
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token }
       })
@@ -161,8 +164,9 @@
         document.getElementById('noActivity').style.display = 'none';
         document.getElementById('activityTable').style.display = 'table';
         data.forEach((a, i) => {
+          const timeField = a.when_ts || a.when || a.time;
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${i+1}</td><td>${a.name}</td><td>${a.email}</td><td>${toIST(a.time)}</td>`;
+          tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(a.email || ('user:' + (a.user_id || 'N/A')))}</td><td>${escapeHtml(toIST(timeField))}</td>`;
           tbody.appendChild(tr);
         });
       })
@@ -195,9 +199,9 @@
       URL.revokeObjectURL(url);
     }
 
-    // Export users.csv
+    // Export users.csv (uses role)
     function exportUsersCSV() {
-      fetch(`${API_BASE}/api/users`, {
+      fetch(`${API}/api/users`, {
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token }
       })
@@ -208,18 +212,18 @@
           { key: 'id', label: 'ID' },
           { key: 'name', label: 'Name' },
           { key: 'email', label: 'Email' },
-          { key: 'is_admin', label: 'Is Admin' }
+          { key: 'role', label: 'Role' }
         ];
-        const rows = data.map(r => ({ ...r, is_admin: r.is_admin ? 'Yes' : 'No' }));
+        const rows = data.map(r => ({ ...r, role: r.role === 'admin' ? 'Admin' : 'User' }));
         const csv = toCSV(rows, cols);
         downloadCSV(csv, 'users.csv');
       })
       .catch(err => { console.error(err); alert('Export failed'); });
     }
 
-    // Export activity.csv
+    // Export activity.csv (uses when_ts)
     function exportActivityCSV() {
-      fetch(`${API_BASE}/api/activity`, {
+      fetch(`${API}/api/activity`, {
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token }
       })
@@ -229,11 +233,10 @@
         const cols = [
           { key: 'id', label: 'ID' },
           { key: 'user_id', label: 'User ID' },
-          { key: 'name', label: 'Name' },
           { key: 'email', label: 'Email' },
-          { key: 'time', label: 'Login Time (IST)' }
+          { key: 'when_ts', label: 'Login Time (IST)' }
         ];
-        const rows = data.map(r => ({ ...r, time: new Date(r.time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) }));
+        const rows = data.map(r => ({ ...r, when_ts: new Date(r.when_ts).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) }));
         const csv = toCSV(rows, cols);
         downloadCSV(csv, 'activity.csv');
       })
@@ -260,9 +263,18 @@ function toggleSection(id) {
  
     // Initialize
     document.addEventListener('DOMContentLoaded', ()=>{
-      loadUsers();
-      loadActivity();
+      // don't auto-load until section expanded; keep lazy loading behavior
     });
+
+    // Utility
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"'`=\/]/g, function(s) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',"/":'&#x2F;','`':'&#96;','=':'&#61;'})[s];
+      });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', ()=>{ /* intentionally left blank */ });
 
     // Logout helper for header link
     function logout(){
@@ -272,4 +284,4 @@ function toggleSection(id) {
     }
   </script>
 </body>
-</html>
+</html
