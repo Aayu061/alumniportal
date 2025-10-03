@@ -1,7 +1,16 @@
-// migrate.js
+// migrate.js — minimal safe improvements
 const { Pool } = require('pg');
+
+const connectionString = process.env.DATABASE_URL || 'postgresql://localhost:5432/alumni';
+
+if (!process.env.DATABASE_URL) {
+  console.warn('WARNING: DATABASE_URL not set. Falling back to local postgres connection string.');
+  console.warn('If you intend to run this against your Render Postgres, set DATABASE_URL and re-run.');
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/alumni',
+  connectionString,
+  // Use SSL in production (Render requires SSL). In local dev this will be false.
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
@@ -33,11 +42,18 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 
 (async () => {
   try {
+    console.log('Connecting to database:', connectionString.replace(/\/\/.*:/, '//*****:')); // mask credential display
     await pool.query(sql);
-    console.log('Migration applied successfully');
+    console.log('✅ Migration applied successfully');
+    process.exit(0);
   } catch (err) {
-    console.error('Migration error:', err);
+    console.error('❌ Migration error:', err && err.stack ? err.stack : err);
+    process.exit(1);
   } finally {
-    await pool.end();
+    try {
+      await pool.end();
+    } catch (e) {
+      // ignore pool shutdown errors
+    }
   }
 })();
