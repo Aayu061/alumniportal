@@ -44,7 +44,7 @@
 
  <script>
   // Read API base without redeclaring API_BASE constant
-  const API = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : 'http://localhost:3001';
+ const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : 'https://alumniportal-jg5p.onrender.com';
 
   const current = JSON.parse(localStorage.getItem('currentUser') || 'null');
   const token = localStorage.getItem('token');
@@ -59,7 +59,7 @@
 
   async function renderActivity() {
     try {
-      const resp = await fetch(`${API}/api/activity`, {
+      const resp = await fetch(`${API_BASE}/api/activity`, {
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
       });
 
@@ -116,6 +116,7 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
