@@ -1,5 +1,6 @@
 // Replace localhost with your Render service URL
-const API_BASE = window.API_BASE || 'http://localhost:3001';
+// Use API_BASE provided by config.js
+const API = window.API_BASE || 'http://localhost:3001';
 
 /* Central script for auth, users, contact - localStorage only */
 
@@ -16,7 +17,7 @@ function register(event){
   if(!name || !email || !password || !confirm){ msg.textContent = 'Please fill all fields.'; return; }
   if(password.length < 6){ msg.textContent = 'Password should be at least 6 characters.'; return; }
   if(password !== confirm){ msg.textContent = 'Passwords do not match.'; return; }
-  fetch(`${API_BASE}/api/register`, {
+  fetch(`${API}/api/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, email, password })
@@ -37,7 +38,7 @@ function login(){
   const password = document.getElementById('loginPassword').value;
   const msg = document.getElementById('loginMsg');
   msg.style.color = 'red';
-  fetch(`${API_BASE}/api/login`, {
+  fetch(`${API}/api/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
@@ -71,7 +72,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
     // prefer server-side send; fallback to localStorage if server fails
     try {
-      const res = await fetch(`${API_BASE}/api/contact`, {
+      const res = await fetch(`${API}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, message })
