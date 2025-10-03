@@ -29,7 +29,8 @@
 
 <script>
   // Use config.js (already defines window.API_BASE)
-  const API = window.API_BASE || 'http://localhost:3001';
+  // Use config.js (already defines window.API_BASE)
+  const API_BASE = window.API_BASE || 'https://alumniportal-jg5p.onrender.com';
 
   function adminLogin() {
     const emailEl = document.getElementById('adminEmail');
@@ -46,7 +47,7 @@
     const password = passEl.value;
     msg.style.color = 'red';
 
-    fetch(`${API}/api/login`, {
+    fetch(`${API_BASE}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -93,11 +94,12 @@
       }
     });
   }
+    <script src="config.js"></script>
 </script>
-  <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
