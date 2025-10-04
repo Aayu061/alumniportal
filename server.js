@@ -58,7 +58,9 @@ function generateToken(user) {
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';`);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
-    console.log('✅ Users table and missing columns ensured');
+    // Fix old schema: make sure password can be NULL (for bcrypt-only systems)
+    await dbQuery(`ALTER TABLE users ALTER COLUMN password DROP NOT NULL;`);
+    console.log('✅ Users table and schema fully ensured');
   } catch (err) {
     console.error('Schema ensure failed:', err);
   }
@@ -186,4 +188,5 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
+
 
