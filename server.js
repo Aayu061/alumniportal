@@ -52,13 +52,13 @@ function generateToken(user) {
         email TEXT UNIQUE NOT NULL,
         password TEXT,
         password_hash TEXT,
-        role TEXT DEFAULT 'user',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        role TEXT DEFAULT 'user'
       );
     `);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';`);
-    console.log('✅ Users table ready');
+    await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
+    console.log('✅ Users table and missing columns ensured');
   } catch (err) {
     console.error('Schema ensure failed:', err);
   }
@@ -186,3 +186,4 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
+
