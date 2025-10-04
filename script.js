@@ -52,6 +52,7 @@ function login(){
     localStorage.setItem('currentUser', JSON.stringify({
       name: u.name || '',
       email: u.email || '',
+      role: u.role || 'user',
       is_admin: (u.role === 'admin')
     }));
     msg.style.color = 'green'; msg.textContent = 'Login successful! Redirecting...';
