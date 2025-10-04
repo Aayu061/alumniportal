@@ -1,4 +1,4 @@
-// server.js — Permanent, self-healing Alumni Portal backend
+// server.js — Permanent, self-healing Alumni Portal backend (CORS + safe error handler)
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -14,9 +14,18 @@ const SECRET = process.env.SECRET || '4d8a24573616cf553f3144fd5e7b5e5b';
 
 // --- Middleware ---
 app.use(bodyParser.json());
+// <-- Updated CORS: allow GitHub Pages variants and local dev origins -->
 app.use(
   cors({
-    origin: ['https://aayu061.github.io', 'https://aayu061.github.io/alumniportal'],
+    origin: [
+      'https://aayu061.github.io',
+      'https://aayu061.github.io/alumniportal',
+      'http://localhost:3000',
+      'http://127.0.0.1:5500'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-migrate-secret', 'x-seed-secret'],
+    credentials: true,
   })
 );
 
@@ -58,7 +67,7 @@ function generateToken(user) {
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';`);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
-    // Fix old schema: make sure password can be NULL (for bcrypt-only systems)
+    // Make legacy password column nullable so inserts with password_hash=NULL succeed
     await dbQuery(`ALTER TABLE users ALTER COLUMN password DROP NOT NULL;`);
     console.log('✅ Users table and schema fully ensured');
   } catch (err) {
@@ -73,7 +82,6 @@ function generateToken(user) {
     const adminPassword = 'ddvsc@123';
 
     // Always compute fresh hash and upsert the admin row.
-    // This avoids duplicate-key errors and guarantees the admin exists with the expected password hash.
     const hash = await bcrypt.hash(adminPassword, 10);
 
     await dbQuery(
@@ -173,7 +181,18 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// 404
+// --- Global error handler (ensures JSON on crashes) ---
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  try {
+    res.status(500).json({ error: 'Server error (see logs)' });
+  } catch (e) {
+    // If response has already been sent, just log
+    console.error('Error sending error response', e);
+  }
+});
+
+// 404 fallback
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 
 // Start
@@ -186,6 +205,3 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
-
-
-
