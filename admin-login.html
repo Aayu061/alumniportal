@@ -31,51 +31,53 @@
   <script src="config.js"></script>
   
   <script>
-  function adminLogin() {
-    const emailEl = document.getElementById('adminEmail');
-    const passEl  = document.getElementById('adminPassword');
-    const msg = document.getElementById('adminLoginMsg');
+function adminLogin() {
+  const emailEl = document.getElementById('adminEmail');
+  const passEl  = document.getElementById('adminPassword');
+  const msg = document.getElementById('adminLoginMsg');
 
-    if (!emailEl || !passEl || !msg) {
-      console.error('admin-login: missing DOM elements');
-      if (msg) { msg.style.color = 'red'; msg.textContent = 'Login form not loaded correctly.'; }
+  if (!emailEl || !passEl || !msg) {
+    console.error('admin-login: missing DOM elements');
+    if (msg) { msg.style.color = 'red'; msg.textContent = 'Login form not loaded correctly.'; }
+    return;
+  }
+
+  const email = emailEl.value.trim().toLowerCase();
+  const password = passEl.value;
+  msg.style.color = 'red';
+
+  fetch(`${window.API_BASE || 'https://alumniportal-jg5p.onrender.com'}/api/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) {
+      msg.textContent = data.error;
       return;
     }
 
-    const email = emailEl.value.trim().toLowerCase();
-    const password = passEl.value;
-    msg.style.color = 'red';
+    // IMPORTANT: server returns { token, user: { id, name, email, role } }
+    const user = data.user || {};
+    // Save token and user info (support both role and is_admin for compatibility)
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('currentUser', JSON.stringify({
+      name: user.name || '',
+      email: user.email || '',
+      role: user.role || (user.is_admin ? 'admin' : 'user'),
+      is_admin: (user.role === 'admin') || (user.is_admin === true)
+    }));
 
-    fetch(`${window.API_BASE || 'https://alumniportal-jg5p.onrender.com'}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.error) {
-        msg.textContent = data.error;
-        return;
-      }
-
-      // Save token and user info (support both role and is_admin for compatibility)
-      localStorage.setItem('currentUser', JSON.stringify({ 
-        name: data.name, 
-        email: data.email, 
-        role: data.role || (data.is_admin ? 'admin' : 'user'),
-        is_admin: data.is_admin 
-      }));
-      localStorage.setItem('token', data.token);
-
-      msg.style.color = 'green';
-      msg.textContent = 'Login successful! Redirecting...';
-      setTimeout(() => { window.location.href = 'admin.html'; }, 900);
-    })
-    .catch((err) => {
-      console.error('admin-login fetch error', err);
-      msg.textContent = 'Server error.';
-    });
-  }
+    msg.style.color = 'green';
+    msg.textContent = 'Login successful! Redirecting...';
+    setTimeout(() => { window.location.href = 'admin.html'; }, 900);
+  })
+  .catch((err) => {
+    console.error('admin-login fetch error', err);
+    msg.textContent = 'Server error.';
+  });
+}
 
   // eye icon toggle
   const toggleAdminPassword = document.getElementById('toggleAdminPassword');
@@ -98,3 +100,4 @@
   <script src="script.js"></script>
 </body>
 </html>
+
