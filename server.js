@@ -66,32 +66,30 @@ function generateToken(user) {
   }
 })();
 
-// --- Self-healing Admin Seeder (permanent & automatic) ---
+// --- Self-healing Admin Seeder (permanent & automatic, uses upsert) ---
 (async () => {
   try {
     const adminEmail = 'aluminiportalddvscm@gmail.com';
     const adminPassword = 'ddvsc@123';
-    const existing = await dbQuery(
-      'SELECT id, password_hash FROM users WHERE email = $1 AND role = $2',
-      [adminEmail, 'admin']
+
+    // Always compute fresh hash and upsert the admin row.
+    // This avoids duplicate-key errors and guarantees the admin exists with the expected password hash.
+    const hash = await bcrypt.hash(adminPassword, 10);
+
+    await dbQuery(
+      `
+      INSERT INTO users (name, email, password_hash, role, created_at)
+      VALUES ($1, $2, $3, 'admin', NOW())
+      ON CONFLICT (email) DO UPDATE
+        SET password_hash = EXCLUDED.password_hash,
+            role = 'admin'
+      `,
+      ['Admin', adminEmail, hash]
     );
 
-    if (existing.rows.length === 0) {
-      const hash = await bcrypt.hash(adminPassword, 10);
-      await dbQuery(
-        `INSERT INTO users (name, email, password_hash, role, created_at)
-         VALUES ($1, $2, $3, 'admin', NOW())`,
-        ['Admin', adminEmail, hash]
-      );
-      console.log('✅ Admin created fresh');
-    } else {
-      // Ensure correct password hash every deploy (self-healing)
-      const hash = await bcrypt.hash(adminPassword, 10);
-      await dbQuery('UPDATE users SET password_hash = $1 WHERE email = $2', [hash, adminEmail]);
-      console.log('✅ Admin password refreshed');
-    }
+    console.log('✅ Admin upserted (created or updated) successfully');
   } catch (err) {
-    console.error('Admin seed failed:', err);
+    console.error('Admin upsert failed:', err);
   }
 })();
 
@@ -188,5 +186,6 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
+
 
 
