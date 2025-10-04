@@ -1,4 +1,4 @@
-// server.js — Clean production-ready backend for Alumni Portal
+// server.js — Permanent, self-healing Alumni Portal backend
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -8,13 +8,9 @@ const bcrypt = require('bcrypt');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-const SECRET = process.env.SECRET || 'change_this_secret_in_render_env';
-const MIGRATE_SECRET = process.env.MIGRATE_SECRET || 'change_this_migrate_secret_in_render_env';
 
-// --- Basic guards ---
-if (!SECRET || SECRET === 'change_this_secret_in_render_env') {
-  console.warn('WARNING: Using default SECRET. Please set SECRET in Render environment variables.');
-}
+// --- Secrets (loaded from Render env or fallback) ---
+const SECRET = process.env.SECRET || '4d8a24573616cf553f3144fd5e7b5e5b';
 
 // --- Middleware ---
 app.use(bodyParser.json());
@@ -24,7 +20,7 @@ app.use(
   })
 );
 
-// --- Postgres pool ---
+// --- PostgreSQL Connection ---
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
@@ -39,17 +35,15 @@ async function dbQuery(text, params = []) {
   }
 }
 
-// --- JWT helper ---
+// --- JWT Helper ---
 function generateToken(user) {
-  return jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
-    SECRET,
-    { expiresIn: '7d' }
-  );
+  return jwt.sign({ id: user.id, email: user.email, role: user.role }, SECRET, {
+    expiresIn: '7d',
+  });
 }
 
-// --- Ensure users table and required columns (safe startup migration) ---
-(async function ensureSchema() {
+// --- Ensure Schema ---
+(async () => {
   try {
     await dbQuery(`
       CREATE TABLE IF NOT EXISTS users (
@@ -64,31 +58,38 @@ function generateToken(user) {
     `);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';`);
-    console.log('✅ Users table and required columns ensured');
+    console.log('✅ Users table ready');
   } catch (err) {
     console.error('Schema ensure failed:', err);
   }
 })();
 
-// --- Auto-seed admin at startup if missing (one-time safe seed) ---
-(async function seedAdminIfMissing() {
+// --- Self-healing Admin Seeder (permanent & automatic) ---
+(async () => {
   try {
     const adminEmail = 'aluminiportalddvscm@gmail.com';
-    const adminPassword = 'ddvsc@123'; // rotate in Render env if desired
-    const res = await dbQuery('SELECT id FROM users WHERE email = $1', [adminEmail]);
-    if (!res.rows.length) {
+    const adminPassword = 'ddvsc@123';
+    const existing = await dbQuery(
+      'SELECT id, password_hash FROM users WHERE email = $1 AND role = $2',
+      [adminEmail, 'admin']
+    );
+
+    if (existing.rows.length === 0) {
       const hash = await bcrypt.hash(adminPassword, 10);
       await dbQuery(
         `INSERT INTO users (name, email, password_hash, role, created_at)
          VALUES ($1, $2, $3, 'admin', NOW())`,
         ['Admin', adminEmail, hash]
       );
-      console.log('✅ Admin seeded at startup');
+      console.log('✅ Admin created fresh');
     } else {
-      console.log('✅ Admin already exists');
+      // Ensure correct password hash every deploy (self-healing)
+      const hash = await bcrypt.hash(adminPassword, 10);
+      await dbQuery('UPDATE users SET password_hash = $1 WHERE email = $2', [hash, adminEmail]);
+      console.log('✅ Admin password refreshed');
     }
   } catch (err) {
-    console.error('Admin seeding error:', err);
+    console.error('Admin seed failed:', err);
   }
 })();
 
@@ -97,15 +98,17 @@ function generateToken(user) {
 // Health
 app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
 
-// Register
+// Register (for users)
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
-    if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
+    if (!name || !email || !password)
+      return res.status(400).json({ error: 'Missing fields' });
 
     const normalized = email.trim().toLowerCase();
     const existing = await dbQuery('SELECT id FROM users WHERE email = $1', [normalized]);
-    if (existing.rows.length) return res.status(409).json({ error: 'Email already registered' });
+    if (existing.rows.length)
+      return res.status(409).json({ error: 'Email already registered' });
 
     const hash = await bcrypt.hash(password, 10);
     const insert = await dbQuery(
@@ -120,11 +123,12 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Login
+// Login (for admin and users)
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body || {};
-    if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
+    if (!email || !password)
+      return res.status(400).json({ error: 'Missing fields' });
 
     const normalized = email.trim().toLowerCase();
     const result = await dbQuery(
@@ -146,18 +150,14 @@ app.post('/api/login', async (req, res) => {
       });
     }
 
-    // fallback for legacy plaintext password
+    // Legacy plaintext fallback
     if (user.password && user.password === password) {
-      try {
-        const newHash = await bcrypt.hash(password, 10);
-        await dbQuery('UPDATE users SET password_hash = $1, password = NULL WHERE id = $2', [
-          newHash,
-          user.id,
-        ]);
-        console.log(`Auto-upgraded password for user id=${user.id}`);
-      } catch (uerr) {
-        console.error('Auto-upgrade failed:', uerr);
-      }
+      const newHash = await bcrypt.hash(password, 10);
+      await dbQuery('UPDATE users SET password_hash = $1, password = NULL WHERE id = $2', [
+        newHash,
+        user.id,
+      ]);
+      console.log(`Auto-upgraded password for user id=${user.id}`);
       const token = generateToken(user);
       return res.json({
         message: 'Login successful',
@@ -173,7 +173,7 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// 404 fallback
+// 404
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 
 // Start
