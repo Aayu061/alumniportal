@@ -1,4 +1,4 @@
-// server.js — Permanent, self-healing Alumni Portal backend (CORS + safe error handler) 
+// server.js — Permanent, self-healing Alumni Portal backend (CORS + safe error handler)
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -53,6 +53,7 @@ function generateToken(user) {
 // --- Ensure Schema ---
 (async () => {
   try {
+    // ✅ Ensure users table
     await dbQuery(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -60,7 +61,8 @@ function generateToken(user) {
         email TEXT UNIQUE NOT NULL,
         password TEXT,
         password_hash TEXT,
-        role TEXT DEFAULT 'user'
+        role TEXT DEFAULT 'user',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
@@ -68,7 +70,7 @@ function generateToken(user) {
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
     await dbQuery(`ALTER TABLE users ALTER COLUMN password DROP NOT NULL;`);
 
-    // ✅ Create login_activity table for admin page
+    // ✅ Ensure login_activity table and columns (fixes when_ts error)
     await dbQuery(`
       CREATE TABLE IF NOT EXISTS login_activity (
         id SERIAL PRIMARY KEY,
@@ -77,6 +79,8 @@ function generateToken(user) {
         when_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    await dbQuery(`ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS when_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
+    await dbQuery(`ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS email TEXT;`);
 
     console.log('✅ Users & login_activity tables ensured');
   } catch (err) {
@@ -84,13 +88,13 @@ function generateToken(user) {
   }
 })();
 
-// --- Self-healing Admin Seeder (permanent & automatic, uses upsert) ---
+// --- Self-healing Admin Seeder ---
 (async () => {
   try {
     const adminEmail = 'aluminiportalddvscm@gmail.com';
     const adminPassword = 'ddvsc@123';
-
     const hash = await bcrypt.hash(adminPassword, 10);
+
     await dbQuery(
       `
       INSERT INTO users (name, email, password_hash, role, created_at)
@@ -101,7 +105,6 @@ function generateToken(user) {
       `,
       ['Admin', adminEmail, hash]
     );
-
     console.log('✅ Admin upserted (created or updated) successfully');
   } catch (err) {
     console.error('Admin upsert failed:', err);
@@ -113,7 +116,7 @@ function generateToken(user) {
 // Health
 app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
 
-// Register (for users)
+// Register
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
@@ -138,7 +141,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Login (for admin and users)
+// Login
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body || {};
@@ -159,8 +162,8 @@ app.post('/api/login', async (req, res) => {
 
       const token = generateToken(user);
 
-      // ✅ Log this login to activity table
-      await dbQuery('INSERT INTO login_activity (user_id, email) VALUES ($1, $2)', [user.id, user.email]);
+      // ✅ Log login
+      await dbQuery('INSERT INTO login_activity (user_id, email, when_ts) VALUES ($1, $2, NOW())', [user.id, user.email]);
 
       return res.json({
         message: 'Login successful',
@@ -169,17 +172,12 @@ app.post('/api/login', async (req, res) => {
       });
     }
 
-    // Legacy plaintext fallback
+    // Legacy fallback
     if (user.password && user.password === password) {
       const newHash = await bcrypt.hash(password, 10);
-      await dbQuery('UPDATE users SET password_hash = $1, password = NULL WHERE id = $2', [
-        newHash,
-        user.id,
-      ]);
+      await dbQuery('UPDATE users SET password_hash = $1, password = NULL WHERE id = $2', [newHash, user.id]);
+      await dbQuery('INSERT INTO login_activity (user_id, email, when_ts) VALUES ($1, $2, NOW())', [user.id, user.email]);
 
-      await dbQuery('INSERT INTO login_activity (user_id, email) VALUES ($1, $2)', [user.id, user.email]);
-
-      console.log(`Auto-upgraded password for user id=${user.id}`);
       const token = generateToken(user);
       return res.json({
         message: 'Login successful',
@@ -195,7 +193,7 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// ✅ Admin endpoint: View recent login activity
+// ✅ Admin endpoint: View login activity
 app.get('/api/activity', async (req, res) => {
   try {
     const auth = req.headers.authorization || '';
@@ -222,7 +220,7 @@ app.get('/api/activity', async (req, res) => {
   }
 });
 
-// --- Global error handler (ensures JSON on crashes) ---
+// --- Global error handler ---
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   try {
