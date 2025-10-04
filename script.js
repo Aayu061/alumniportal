@@ -46,9 +46,14 @@ function login(){
   .then(res => res.json())
   .then(data => {
     if(data.error){ msg.textContent = data.error; return; }
-    // Save token and user info in localStorage
+    // Save token and user info in localStorage (use server's returned user object)
     localStorage.setItem('token', data.token);
-    localStorage.setItem('currentUser', JSON.stringify({ name: data.name, email: data.email, is_admin: data.is_admin }));
+    const u = data.user || {};
+    localStorage.setItem('currentUser', JSON.stringify({
+      name: u.name || '',
+      email: u.email || '',
+      is_admin: (u.role === 'admin')
+    }));
     msg.style.color = 'green'; msg.textContent = 'Login successful! Redirecting...';
     setTimeout(()=>{ window.location.href = 'welcome.html'; }, 900);
   })
