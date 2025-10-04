@@ -1,4 +1,4 @@
-// server.js — Permanent, self-healing Alumni Portal backend (CORS + safe error handler)
+// server.js — Permanent, self-healing Alumni Portal backend (CORS + safe error handler) 
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -14,7 +14,6 @@ const SECRET = process.env.SECRET || '4d8a24573616cf553f3144fd5e7b5e5b';
 
 // --- Middleware ---
 app.use(bodyParser.json());
-// <-- Updated CORS: allow GitHub Pages variants and local dev origins -->
 app.use(
   cors({
     origin: [
@@ -67,9 +66,19 @@ function generateToken(user) {
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';`);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
-    // Make legacy password column nullable so inserts with password_hash=NULL succeed
     await dbQuery(`ALTER TABLE users ALTER COLUMN password DROP NOT NULL;`);
-    console.log('✅ Users table and schema fully ensured');
+
+    // ✅ Create login_activity table for admin page
+    await dbQuery(`
+      CREATE TABLE IF NOT EXISTS login_activity (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        email TEXT,
+        when_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    console.log('✅ Users & login_activity tables ensured');
   } catch (err) {
     console.error('Schema ensure failed:', err);
   }
@@ -81,9 +90,7 @@ function generateToken(user) {
     const adminEmail = 'aluminiportalddvscm@gmail.com';
     const adminPassword = 'ddvsc@123';
 
-    // Always compute fresh hash and upsert the admin row.
     const hash = await bcrypt.hash(adminPassword, 10);
-
     await dbQuery(
       `
       INSERT INTO users (name, email, password_hash, role, created_at)
@@ -151,6 +158,10 @@ app.post('/api/login', async (req, res) => {
       if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
 
       const token = generateToken(user);
+
+      // ✅ Log this login to activity table
+      await dbQuery('INSERT INTO login_activity (user_id, email) VALUES ($1, $2)', [user.id, user.email]);
+
       return res.json({
         message: 'Login successful',
         token,
@@ -165,6 +176,9 @@ app.post('/api/login', async (req, res) => {
         newHash,
         user.id,
       ]);
+
+      await dbQuery('INSERT INTO login_activity (user_id, email) VALUES ($1, $2)', [user.id, user.email]);
+
       console.log(`Auto-upgraded password for user id=${user.id}`);
       const token = generateToken(user);
       return res.json({
@@ -181,13 +195,39 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// ✅ Admin endpoint: View recent login activity
+app.get('/api/activity', async (req, res) => {
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Missing token' });
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, SECRET);
+    } catch {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    if (decoded.role !== 'admin')
+      return res.status(403).json({ error: 'Forbidden: Admin only' });
+
+    const result = await dbQuery(
+      'SELECT id, email, when_ts FROM login_activity ORDER BY when_ts DESC LIMIT 50;'
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Activity fetch error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // --- Global error handler (ensures JSON on crashes) ---
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   try {
     res.status(500).json({ error: 'Server error (see logs)' });
   } catch (e) {
-    // If response has already been sent, just log
     console.error('Error sending error response', e);
   }
 });
