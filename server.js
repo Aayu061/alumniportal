@@ -53,26 +53,44 @@ async function dbQuery(text, params = []) {
 }
 
 // --- Nodemailer transporter (uses env vars) ---
+// Minimal, robust setup that supports both 465 (secure) and 587 (STARTTLS).
 const MAIL_USER = process.env.MAIL_USER || '';
 const MAIL_PASS = process.env.MAIL_PASS || '';
 const MAIL_HOST = process.env.MAIL_HOST || 'smtp.gmail.com';
 const MAIL_PORT = process.env.MAIL_PORT ? parseInt(process.env.MAIL_PORT, 10) : 465;
+
 let mailTransporter = null;
 
 if (MAIL_USER && MAIL_PASS) {
   mailTransporter = nodemailer.createTransport({
     host: MAIL_HOST,
     port: MAIL_PORT,
-    secure: MAIL_PORT === 465,
-    auth: { user: MAIL_USER, pass: MAIL_PASS },
+    secure: MAIL_PORT === 465, // true for 465, false for 587 (STARTTLS)
+    auth: {
+      user: MAIL_USER,
+      pass: MAIL_PASS
+    },
+    // make network errors fail quickly instead of hanging forever
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 10_000,
+    tls: {
+      // Do NOT set rejectUnauthorized: false in production unless you understand the risk.
+      // Render's environment and Gmail will not require this; keep true by default.
+      rejectUnauthorized: true
+    }
   });
 
-  // verify transporter (non-fatal)
-  mailTransporter.verify().then(() => {
-    console.log('✅ Mail transporter verified');
-  }).catch(err => {
-    console.warn('⚠️ Mail transporter verification failed:', err && err.message ? err.message : err);
-  });
+  // verify transporter (non-fatal) and log clear message
+  mailTransporter.verify()
+    .then(() => {
+      console.log('✅ Mail transporter verified (ready to send).');
+    })
+    .catch(err => {
+      // show a readable message in logs
+      console.warn('⚠️ Mail transporter verification failed:', (err && err.message) ? err.message : err);
+      // keep running (we return 500 on /api/contact when not available)
+    });
 } else {
   console.warn('⚠️ MAIL_USER or MAIL_PASS not set — contact emails will not be sent.');
 }
@@ -472,4 +490,3 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
-
