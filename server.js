@@ -432,10 +432,13 @@ app.post('/api/contact', async (req, res) => {
       text: `From: ${name} <${email}>\n\n${message}`,
       html: `<p><strong>From:</strong> ${name} &lt;${email}&gt;</p><hr><div style="white-space:pre-wrap">${message}</div>`
     };
-
+    
     const info = await mailTransporter.sendMail(mailOptions);
-    console.log('Contact message sent, messageId=', info && info.messageId);
-    return res.json({ message: 'Message sent — thank you!' });
+    // Log full info so you can see SendGrid response shape in Render logs
+    console.log('Contact message sent — sendMail info:', info);
+    // Also return a small debug object (safe) so client can show success and you can inspect if needed.
+    // NOTE: remove `debug` from response later if you don't want to expose internals to the browser.
+    return res.json({ message: 'Message sent — thank you!', debug: info });
   } catch (err) {
     console.error('Contact send failed:', err && err.message ? err.message : err);
     return res.status(500).json({ error: 'Failed to send message' });
@@ -465,5 +468,6 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
+
 
 
