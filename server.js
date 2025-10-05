@@ -117,6 +117,7 @@ function generateToken(user) {
 app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
 
 // Register
+// --- Register new user ---
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
@@ -124,16 +125,21 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Missing fields' });
 
     const normalized = email.trim().toLowerCase();
+
+    // 🧩 Check if already registered
     const existing = await dbQuery('SELECT id FROM users WHERE email = $1', [normalized]);
     if (existing.rows.length)
       return res.status(409).json({ error: 'Email already registered' });
 
+    // 🧩 Always hash the password and store in password_hash only
     const hash = await bcrypt.hash(password, 10);
     const insert = await dbQuery(
-      `INSERT INTO users (name, email, password_hash, role, created_at)
-       VALUES ($1, $2, $3, $4, NOW()) RETURNING id, name, email, role`,
+      `INSERT INTO users (name, email, password_hash, password, role, created_at)
+       VALUES ($1, $2, $3, NULL, $4, NOW())
+       RETURNING id, name, email, role`,
       [name.trim(), normalized, hash, 'user']
     );
+
     res.json({ message: 'Registered successfully', user: insert.rows[0] });
   } catch (err) {
     console.error('Register error:', err);
@@ -156,35 +162,41 @@ app.post('/api/login', async (req, res) => {
     const user = result.rows[0];
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-    if (user.password_hash) {
-      const ok = await bcrypt.compare(password, user.password_hash);
-      if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+   // --- Login check (handles both hashed & legacy plain passwords) ---
+if (user.password_hash) {
+  const ok = await bcrypt.compare(password, user.password_hash);
 
-      const token = generateToken(user);
+  // 🧩 If bcrypt fails, try legacy fallback once
+  if (!ok && user.password && user.password === password) {
+    const newHash = await bcrypt.hash(password, 10);
+    await dbQuery('UPDATE users SET password_hash=$1, password=NULL WHERE id=$2', [newHash, user.id]);
+  } else if (!ok) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
 
-      // ✅ Log login
-      await dbQuery('INSERT INTO login_activity (user_id, email, when_ts) VALUES ($1, $2, NOW())', [user.id, user.email]);
+  const token = generateToken(user);
+  await dbQuery('INSERT INTO login_activity (user_id, email, when_ts) VALUES ($1,$2,NOW())', [user.id, user.email]);
 
-      return res.json({
-        message: 'Login successful',
-        token,
-        user: { id: user.id, name: user.name, email: user.email, role: user.role },
-      });
-    }
+  return res.json({
+    message: 'Login successful',
+    token,
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+  });
+}
 
-    // Legacy fallback
-    if (user.password && user.password === password) {
-      const newHash = await bcrypt.hash(password, 10);
-      await dbQuery('UPDATE users SET password_hash = $1, password = NULL WHERE id = $2', [newHash, user.id]);
-      await dbQuery('INSERT INTO login_activity (user_id, email, when_ts) VALUES ($1, $2, NOW())', [user.id, user.email]);
+// 🧩 If only plain password exists (old users), convert on first login
+if (user.password && user.password === password) {
+  const newHash = await bcrypt.hash(password, 10);
+  await dbQuery('UPDATE users SET password_hash=$1, password=NULL WHERE id=$2', [newHash, user.id]);
+  await dbQuery('INSERT INTO login_activity (user_id, email, when_ts) VALUES ($1,$2,NOW())', [user.id, user.email]);
 
-      const token = generateToken(user);
-      return res.json({
-        message: 'Login successful',
-        token,
-        user: { id: user.id, name: user.name, email: user.email, role: user.role },
-      });
-    }
+  const token = generateToken(user);
+  return res.json({
+    message: 'Login successful',
+    token,
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+  });
+}
 
     return res.status(401).json({ error: 'Invalid credentials' });
   } catch (err) {
@@ -270,4 +282,5 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
+
 
