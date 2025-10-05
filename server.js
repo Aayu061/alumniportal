@@ -33,6 +33,9 @@ app.use(
   })
 );
 
+// increase JSON body limit slightly so large backups aren't rejected
+app.use(bodyParser.json({ limit: '2mb' }));
+
 // --- PostgreSQL Connection ---
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -305,6 +308,60 @@ app.get('/api/admin/backup', async (req, res) => {
   } catch (err) {
     console.error('Backup error:', err);
     res.status(500).json({ error: 'Server error while generating backup' });
+  }
+});
+
+// ✅ Admin-only endpoint: restore from uploaded backup JSON
+// Expects body: { users: [...], activity: [...] }
+app.post('/api/admin/restore', async (req, res) => {
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Missing token' });
+
+    let decoded;
+    try { decoded = jwt.verify(token, SECRET); }
+    catch { return res.status(401).json({ error: 'Invalid token' }); }
+
+    if (decoded.role !== 'admin') return res.status(403).json({ error: 'Forbidden: Admin only' });
+
+    const data = req.body || {};
+    const users = Array.isArray(data.users) ? data.users : [];
+    const activity = Array.isArray(data.activity) ? data.activity : [];
+
+    // Transactional restore: truncate then insert
+    await dbQuery('BEGIN');
+    await dbQuery('TRUNCATE TABLE login_activity RESTART IDENTITY CASCADE');
+    await dbQuery('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
+
+    // Insert users (passwords not included in backup => leave password_hash NULL)
+    for (const u of users) {
+      const role = u.is_admin ? 'admin' : 'user';
+      await dbQuery(
+        `INSERT INTO users (name, email, password_hash, role, created_at)
+         VALUES ($1,$2,NULL,$3,NOW())
+         ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role`,
+        [u.name || null, u.email || null, role]
+      );
+    }
+
+    // Insert login_activity; link user_id by email if possible
+    for (const a of activity) {
+      const r = await dbQuery('SELECT id FROM users WHERE email = $1', [a.email]);
+      const user_id = r.rows[0] ? r.rows[0].id : null;
+      await dbQuery(
+        `INSERT INTO login_activity (user_id, email, when_ts)
+         VALUES ($1, $2, $3)`,
+        [user_id, a.email || null, a.time || new Date()]
+      );
+    }
+
+    await dbQuery('COMMIT');
+    return res.json({ message: 'Restore completed' });
+  } catch (err) {
+    try { await dbQuery('ROLLBACK'); } catch(e) {}
+    console.error('Restore error:', err);
+    return res.status(500).json({ error: 'Restore failed' });
   }
 });
 
