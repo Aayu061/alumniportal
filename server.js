@@ -96,26 +96,25 @@ function generateToken(user) {
   }
 })();
 
-// --- Self-healing Admin Seeder ---
+// --- Self-healing Admin Seeder (ensures admin always has valid password) ---
 (async () => {
   try {
     const adminEmail = 'aluminiportalddvscm@gmail.com';
     const adminPassword = 'ddvsc@123';
     const hash = await bcrypt.hash(adminPassword, 10);
 
-    await dbQuery(
-      `
+    // 🩵 If admin exists but missing password_hash, fix it. If not, create.
+    await dbQuery(`
       INSERT INTO users (name, email, password_hash, role, created_at)
       VALUES ($1, $2, $3, 'admin', NOW())
       ON CONFLICT (email) DO UPDATE
         SET password_hash = EXCLUDED.password_hash,
             role = 'admin'
-      `,
-      ['Admin', adminEmail, hash]
-    );
-    console.log('✅ Admin upserted (created or updated) successfully');
+    `, ['Admin', adminEmail, hash]);
+
+    console.log('✅ Admin ensured and password reset (email: aluminiportalddvscm@gmail.com)');
   } catch (err) {
-    console.error('Admin upsert failed:', err);
+    console.error('Admin seeder failed:', err);
   }
 })();
 
@@ -388,3 +387,4 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
+
