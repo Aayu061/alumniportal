@@ -362,4 +362,93 @@ img, .logo, .info-img { max-width: 100%; height: auto; }
   }
 }
 
+/* ------------------ Minimal polish: card hover, image zoom & nav feel ------------------ */
 
+/* smoother card transitions & image zoom
+   - Only minimal additions here to enhance visuals.
+   - A few key properties use !important so they override earlier !important rules where necessary.
+*/
+.card {
+  /* ensure smooth motion while not changing layout */
+  transition: transform 0.28s cubic-bezier(.2,.9,.2,1), box-shadow 0.28s cubic-bezier(.2,.9,.2,1);
+  will-change: transform, box-shadow;
+}
+
+.card img,
+.card .card-icon {
+  transition: transform 0.32s ease, filter 0.32s ease;
+  will-change: transform, filter;
+  backface-visibility: hidden;
+}
+
+/* gentle zoom on card image when hovering the whole card */
+/* using !important to ensure this visual takes effect even with prior !important overrides */
+.card:hover img,
+.card:hover .card-icon {
+  transform: scale(1.06) !important;
+  filter: saturate(1.02) !important;
+}
+
+/* keep your existing lift but slightly soften scale (use !important to win against earlier rules) */
+.card:hover {
+  transform: translateY(-8px) scale(1.01) !important;
+}
+
+/* subtle focus/hover glow for keyboard + mouse accessibility */
+.card:focus-within,
+.card:focus {
+  outline: none;
+  box-shadow: 0 22px 48px rgba(8,20,40,0.10);
+  transform: translateY(-6px) scale(1.01);
+}
+
+/* nav/header micro-polish (non-breaking) */
+.site-header {
+  /* add very small rounded bottom corners and gentle backdrop blur */
+  border-radius: 0 0 12px 12px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  /* strengthen existing shadow slightly for depth */
+  box-shadow: 0 8px 22px rgba(2,8,23,0.08);
+}
+
+/* micro-lift & glow for nav links */
+.nav a {
+  transition: color 0.22s ease, transform 0.18s ease, text-shadow 0.22s ease;
+  will-change: transform, color;
+}
+
+/* tiny upward nudge on hover for a 'feel-good' interaction */
+.nav a:hover {
+  transform: translateY(-3px);
+  text-shadow: 0 6px 20px rgba(94,234,212,0.06);
+}
+
+/* slight thickness increase for hover underline (keeps existing ::after animation) */
+.nav a:hover::after {
+  height: 3px;
+  bottom: -4px;
+  border-radius: 3px;
+}
+
+/* slight emphasis for CTA nav buttons */
+.nav .btn {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  will-change: transform, box-shadow;
+}
+
+/* accessibility: focus-visible style for keyboard users */
+.nav a:focus-visible, .nav .btn:focus-visible {
+  outline: 3px solid rgba(37,99,235,0.12);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Responsive safety: don't apply image zoom on extremely small screens for layout stability */
+@media (max-width: 420px) {
+  .card:hover img,
+  .card:hover .card-icon {
+    transform: none !important;
+  }
+  .nav a:hover { transform: none; text-shadow: none; }
+}
