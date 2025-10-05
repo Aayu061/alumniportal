@@ -1,6 +1,5 @@
-// Replace localhost with your Render service URL
-// Use API provided by config.js (window.API_BASE)
-const API = window.API_BASE || 'https://alumniportal-jg5p.onrender.com';
+// Use window.API if already declared elsewhere; otherwise fall back to API_BASE or Render URL
+window.API = window.API || window.API_BASE || 'https://alumniportal-jg5p.onrender.com';
 
 /* Central script for auth, users, contact - localStorage only */
 
@@ -17,7 +16,7 @@ function register(event){
   if(!name || !email || !password || !confirm){ msg.textContent = 'Please fill all fields.'; return; }
   if(password.length < 6){ msg.textContent = 'Password should be at least 6 characters.'; return; }
   if(password !== confirm){ msg.textContent = 'Passwords do not match.'; return; }
-  fetch(`${API}/api/register`, {
+  fetch(`${window.API}/api/register`,{
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, email, password })
@@ -38,7 +37,7 @@ function login(){
   const password = document.getElementById('loginPassword').value;
   const msg = document.getElementById('loginMsg');
   msg.style.color = 'red';
-  fetch(`${API}/api/login`, {
+  fetch(`${window.API}/api/login`,{
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
@@ -78,7 +77,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
     // prefer server-side send; fallback to localStorage if server fails
     try {
-      const res = await fetch(`${API}/api/contact`, {
+      const res = await fetch(`${window.API}/api/contact`,{
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, message })
