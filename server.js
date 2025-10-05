@@ -65,11 +65,7 @@ if (SENDGRID_API_KEY && MAIL_USER) {
     })
   );
 
-  mailTransporter.verify().then(() => {
-    console.log('✅ SendGrid mail transporter verified.');
-  }).catch(err => {
-    console.warn('⚠️ SendGrid transporter verification failed:', err && err.message ? err.message : err);
-  });
+  console.log('✅ SendGrid mail transporter configured (no verify needed).');
 } else {
   console.warn('⚠️ SENDGRID_API_KEY or MAIL_USER not set — contact emails will not be sent.');
 }
@@ -469,4 +465,5 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
+
 
