@@ -126,6 +126,15 @@ body::before {
 .hero h2{font-size:36px;margin-bottom:12px;letter-spacing:0.2px}
 .hero p{max-width:640px;margin-bottom:18px;color:rgba(255,255,255,0.92)}
 .hero-actions .btn{margin-right:12px}
+.hero {
+  margin-top: -10px; /* closes 1px rendering gap due to rounding */
+}
+
+/* If header has shadow/padding, allow image to start exactly under it */
+.site-header + .hero {
+  margin-top: 0;
+  padding-top: 0;
+}
 
 /* --- Cards --- */
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:-60px;z-index:20;position:relative}
