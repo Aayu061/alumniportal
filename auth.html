@@ -182,6 +182,7 @@
 
     // clear timer helper
     function clearExistingTimer(id) {
+
       if (toggles[id]) {
         clearTimeout(toggles[id]);
         toggles[id] = null;
@@ -193,62 +194,7 @@
     makeKeyboardActivatable(btn, toggleOnce);
   }
 
-  // Simple password strength estimator (0..4) based on length and char variety
-  function estimatePasswordStrength(pw) {
-    if (!pw) return 0;
-    let score = 0;
-    if (pw.length >= 8) score++;
-    if (pw.length >= 12) score++;
-    // variety checks
-    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
-    if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) score++;
-    return Math.min(score, 4);
-  }
-
-  function strengthLabel(score) {
-    switch(score) {
-      case 0: return {text: 'Very weak', color: '#e11d48'}; // red
-      case 1: return {text: 'Weak', color: '#fb923c'}; // orange
-      case 2: return {text: 'Okay', color: '#f59e0b'}; // amber
-      case 3: return {text: 'Good', color: '#10b981'}; // green
-      case 4: return {text: 'Strong', color: '#059669'}; // darker green
-      default: return {text: '', color: '#666'};
-    }
-  }
-
-  // Insert a strength meter element after an input if not already present
-  function ensureStrengthMeter(input) {
-    if (!input) return null;
-    let meter = input.parentNode.querySelector('.pw-strength');
-    if (!meter) {
-      meter = document.createElement('div');
-      meter.className = 'pw-strength';
-      meter.style.fontSize = '13px';
-      meter.style.marginTop = '6px';
-      meter.innerHTML = '<span class="pw-strength-bar" aria-hidden="true" style="display:inline-block;height:8px;vertical-align:middle;border-radius:6px;margin-right:8px;width:80px;background:#eee"></span><span class="pw-strength-text" style="vertical-align:middle;color:#333"> </span>';
-      input.parentNode.appendChild(meter);
-    }
-    return meter;
-  }
-
-  // Update strength meter
-  function updateStrengthMeter(input) {
-    const meter = ensureStrengthMeter(input);
-    if (!meter) return;
-    const pw = input.value || '';
-    const score = estimatePasswordStrength(pw);
-    const info = strengthLabel(score);
-    const bar = meter.querySelector('.pw-strength-bar');
-    const text = meter.querySelector('.pw-strength-text');
-    // show proportional fill
-    const pct = (score / 4) * 100;
-    bar.style.background = '#eee';
-    bar.style.position = 'relative';
-    bar.innerHTML = '<span aria-hidden="true" style="display:block;height:100%;width:' + pct + '%;background:' + info.color + ';border-radius:6px;"></span>';
-    text.textContent = info.text;
-    text.style.color = info.color;
-  }
-
+  
   // Live confirm-match checker
   function attachConfirmMatch(passwordInput, confirmInput) {
     if (!passwordInput || !confirmInput) return;
@@ -279,11 +225,9 @@
     passwordInput.addEventListener('input', update);
     confirmInput.addEventListener('input', update);
   }
-
-  // Enhance all toggles and attach meters
   const mapping = [
     { inputId: 'loginPassword', toggleId: 'toggleLoginPassword', meter: false },
-    { inputId: 'password', toggleId: 'togglePassword', meter: true },
+    { inputId: 'password', toggleId: 'togglePassword', meter: false },
     { inputId: 'confirmPassword', toggleId: 'toggleConfirmPassword', meter: false }
   ];
 
