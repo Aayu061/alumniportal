@@ -13,7 +13,6 @@ const PORT = process.env.PORT || 10000;
 const SECRET = process.env.SECRET || '4d8a24573616cf553f3144fd5e7b5e5b';
 
 // --- Middleware ---
-app.use(bodyParser.json());
 app.use(
   cors({
     origin: [
@@ -23,7 +22,13 @@ app.use(
       'http://127.0.0.1:5500'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-migrate-secret', 'x-seed-secret'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-migrate-secret',
+      'x-seed-secret',
+      'Cache-Control'
+    ],
     credentials: true,
   })
 );
@@ -282,5 +287,6 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
+
 
 
