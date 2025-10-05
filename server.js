@@ -264,6 +264,50 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+// ✅ Admin-only endpoint: create JSON backup (users + login activity)
+app.get('/api/admin/backup', async (req, res) => {
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Missing token' });
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, SECRET);
+    } catch {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    if (decoded.role !== 'admin')
+      return res.status(403).json({ error: 'Forbidden: Admin only' });
+
+    // ✅ Fetch data
+    const users = await dbQuery('SELECT id, name, email, role FROM users ORDER BY id ASC;');
+    const activity = await dbQuery('SELECT id, user_id, email, when_ts FROM login_activity ORDER BY when_ts DESC;');
+
+    // ✅ Shape data like backup.json
+    const backup = {
+      users: users.rows.map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        is_admin: u.role === 'admin'
+      })),
+      activity: activity.rows.map(a => ({
+        id: a.id,
+        user_id: a.user_id,
+        email: a.email,
+        time: a.when_ts
+      }))
+    };
+    
+    res.json(backup);
+  } catch (err) {
+    console.error('Backup error:', err);
+    res.status(500).json({ error: 'Server error while generating backup' });
+  }
+});
+
 // --- Global error handler ---
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
@@ -287,6 +331,3 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
-
-
-
