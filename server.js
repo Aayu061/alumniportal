@@ -364,6 +364,46 @@ app.post('/api/admin/restore', async (req, res) => {
   }
 });
 
+// Admin-only endpoint: wipe users & login_activity, then re-seed admin
+app.post('/api/admin/clear', async (req, res) => {
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Missing token' });
+
+    let decoded;
+    try { decoded = jwt.verify(token, SECRET); }
+    catch { return res.status(401).json({ error: 'Invalid token' }); }
+
+    if (decoded.role !== 'admin') return res.status(403).json({ error: 'Forbidden: Admin only' });
+
+    await dbQuery('BEGIN');
+
+    // Remove activity and users (reset serials)
+    await dbQuery('TRUNCATE TABLE login_activity RESTART IDENTITY CASCADE');
+    await dbQuery('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
+
+    // Re-seed default admin (so you can still log in)
+    const adminEmail = 'aluminiportalddvscm@gmail.com';
+    const adminPassword = 'ddvsc@123';
+    const adminHash = await bcrypt.hash(adminPassword, 10);
+
+    await dbQuery(
+      `INSERT INTO users (name, email, password_hash, role, created_at)
+       VALUES ($1, $2, $3, 'admin', NOW())
+       ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = 'admin'`,
+      ['Admin', adminEmail, adminHash]
+    );
+
+    await dbQuery('COMMIT');
+    res.json({ message: 'Cleared users & login_activity; admin re-seeded' });
+  } catch (err) {
+    try { await dbQuery('ROLLBACK'); } catch(e) {}
+    console.error('Clear endpoint error:', err);
+    res.status(500).json({ error: 'Clear failed' });
+  }
+});
+
 // --- Global error handler ---
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
@@ -387,4 +427,5 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
+
 
