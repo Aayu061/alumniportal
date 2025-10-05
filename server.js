@@ -5,6 +5,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -51,6 +52,31 @@ async function dbQuery(text, params = []) {
   }
 }
 
+// --- Nodemailer transporter (uses env vars) ---
+const MAIL_USER = process.env.MAIL_USER || '';
+const MAIL_PASS = process.env.MAIL_PASS || '';
+const MAIL_HOST = process.env.MAIL_HOST || 'smtp.gmail.com';
+const MAIL_PORT = process.env.MAIL_PORT ? parseInt(process.env.MAIL_PORT, 10) : 465;
+let mailTransporter = null;
+
+if (MAIL_USER && MAIL_PASS) {
+  mailTransporter = nodemailer.createTransport({
+    host: MAIL_HOST,
+    port: MAIL_PORT,
+    secure: MAIL_PORT === 465,
+    auth: { user: MAIL_USER, pass: MAIL_PASS },
+  });
+
+  // verify transporter (non-fatal)
+  mailTransporter.verify().then(() => {
+    console.log('✅ Mail transporter verified');
+  }).catch(err => {
+    console.warn('⚠️ Mail transporter verification failed:', err && err.message ? err.message : err);
+  });
+} else {
+  console.warn('⚠️ MAIL_USER or MAIL_PASS not set — contact emails will not be sent.');
+}
+
 // --- JWT Helper ---
 function generateToken(user) {
   return jwt.sign({ id: user.id, email: user.email, role: user.role }, SECRET, {
@@ -61,7 +87,6 @@ function generateToken(user) {
 // --- Ensure Schema ---
 (async () => {
   try {
-    // ✅ Ensure users table
     await dbQuery(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -78,7 +103,6 @@ function generateToken(user) {
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
     await dbQuery(`ALTER TABLE users ALTER COLUMN password DROP NOT NULL;`);
 
-    // ✅ Ensure login_activity table and columns (fixes when_ts error)
     await dbQuery(`
       CREATE TABLE IF NOT EXISTS login_activity (
         id SERIAL PRIMARY KEY,
@@ -96,25 +120,26 @@ function generateToken(user) {
   }
 })();
 
-// --- Self-healing Admin Seeder (ensures admin always has valid password) ---
+// --- Self-healing Admin Seeder ---
 (async () => {
   try {
     const adminEmail = 'aluminiportalddvscm@gmail.com';
     const adminPassword = 'ddvsc@123';
     const hash = await bcrypt.hash(adminPassword, 10);
 
-    // 🩵 If admin exists but missing password_hash, fix it. If not, create.
-    await dbQuery(`
+    await dbQuery(
+      `
       INSERT INTO users (name, email, password_hash, role, created_at)
       VALUES ($1, $2, $3, 'admin', NOW())
       ON CONFLICT (email) DO UPDATE
         SET password_hash = EXCLUDED.password_hash,
             role = 'admin'
-    `, ['Admin', adminEmail, hash]);
-
-    console.log('✅ Admin ensured and password reset (email: aluminiportalddvscm@gmail.com)');
+      `,
+      ['Admin', adminEmail, hash]
+    );
+    console.log('✅ Admin upserted (created or updated) successfully');
   } catch (err) {
-    console.error('Admin seeder failed:', err);
+    console.error('Admin upsert failed:', err);
   }
 })();
 
@@ -124,7 +149,6 @@ function generateToken(user) {
 app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
 
 // Register
-// --- Register new user ---
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
@@ -132,13 +156,10 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Missing fields' });
 
     const normalized = email.trim().toLowerCase();
-
-    // 🧩 Check if already registered
     const existing = await dbQuery('SELECT id FROM users WHERE email = $1', [normalized]);
     if (existing.rows.length)
       return res.status(409).json({ error: 'Email already registered' });
 
-    // 🧩 Always hash the password and store in password_hash only
     const hash = await bcrypt.hash(password, 10);
     const insert = await dbQuery(
       `INSERT INTO users (name, email, password_hash, password, role, created_at)
@@ -169,41 +190,38 @@ app.post('/api/login', async (req, res) => {
     const user = result.rows[0];
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-   // --- Login check (handles both hashed & legacy plain passwords) ---
-if (user.password_hash) {
-  const ok = await bcrypt.compare(password, user.password_hash);
+    if (user.password_hash) {
+      const ok = await bcrypt.compare(password, user.password_hash);
 
-  // 🧩 If bcrypt fails, try legacy fallback once
-  if (!ok && user.password && user.password === password) {
-    const newHash = await bcrypt.hash(password, 10);
-    await dbQuery('UPDATE users SET password_hash=$1, password=NULL WHERE id=$2', [newHash, user.id]);
-  } else if (!ok) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
+      if (!ok && user.password && user.password === password) {
+        const newHash = await bcrypt.hash(password, 10);
+        await dbQuery('UPDATE users SET password_hash=$1, password=NULL WHERE id=$2', [newHash, user.id]);
+      } else if (!ok) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
 
-  const token = generateToken(user);
-  await dbQuery('INSERT INTO login_activity (user_id, email, when_ts) VALUES ($1,$2,NOW())', [user.id, user.email]);
+      const token = generateToken(user);
+      await dbQuery('INSERT INTO login_activity (user_id, email, when_ts) VALUES ($1,$2,NOW())', [user.id, user.email]);
 
-  return res.json({
-    message: 'Login successful',
-    token,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role },
-  });
-}
+      return res.json({
+        message: 'Login successful',
+        token,
+        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      });
+    }
 
-// 🧩 If only plain password exists (old users), convert on first login
-if (user.password && user.password === password) {
-  const newHash = await bcrypt.hash(password, 10);
-  await dbQuery('UPDATE users SET password_hash=$1, password=NULL WHERE id=$2', [newHash, user.id]);
-  await dbQuery('INSERT INTO login_activity (user_id, email, when_ts) VALUES ($1,$2,NOW())', [user.id, user.email]);
+    if (user.password && user.password === password) {
+      const newHash = await bcrypt.hash(password, 10);
+      await dbQuery('UPDATE users SET password_hash=$1, password=NULL WHERE id=$2', [newHash, user.id]);
+      await dbQuery('INSERT INTO login_activity (user_id, email, when_ts) VALUES ($1,$2,NOW())', [user.id, user.email]);
 
-  const token = generateToken(user);
-  return res.json({
-    message: 'Login successful',
-    token,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role },
-  });
-}
+      const token = generateToken(user);
+      return res.json({
+        message: 'Login successful',
+        token,
+        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      });
+    }
 
     return res.status(401).json({ error: 'Invalid credentials' });
   } catch (err) {
@@ -212,7 +230,7 @@ if (user.password && user.password === password) {
   }
 });
 
-// ✅ Admin endpoint: View login activity
+// Admin endpoint: View login activity
 app.get('/api/activity', async (req, res) => {
   try {
     const auth = req.headers.authorization || '';
@@ -239,7 +257,7 @@ app.get('/api/activity', async (req, res) => {
   }
 });
 
-// ✅ Admin-only endpoint: fetch all registered users
+// Admin-only endpoint: fetch all registered users
 app.get('/api/users', async (req, res) => {
   try {
     const auth = req.headers.authorization || '';
@@ -266,7 +284,7 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// ✅ Admin-only endpoint: create JSON backup (users + login activity)
+// Admin-only endpoint: create JSON backup (users + login activity)
 app.get('/api/admin/backup', async (req, res) => {
   try {
     const auth = req.headers.authorization || '';
@@ -283,11 +301,9 @@ app.get('/api/admin/backup', async (req, res) => {
     if (decoded.role !== 'admin')
       return res.status(403).json({ error: 'Forbidden: Admin only' });
 
-    // ✅ Fetch data
     const users = await dbQuery('SELECT id, name, email, role FROM users ORDER BY id ASC;');
     const activity = await dbQuery('SELECT id, user_id, email, when_ts FROM login_activity ORDER BY when_ts DESC;');
 
-    // ✅ Shape data like backup.json
     const backup = {
       users: users.rows.map(u => ({
         id: u.id,
@@ -310,7 +326,7 @@ app.get('/api/admin/backup', async (req, res) => {
   }
 });
 
-// ✅ Admin-only endpoint: restore from uploaded backup JSON
+// Admin-only endpoint: restore from uploaded backup JSON
 // Expects body: { users: [...], activity: [...] }
 app.post('/api/admin/restore', async (req, res) => {
   try {
@@ -404,6 +420,35 @@ app.post('/api/admin/clear', async (req, res) => {
   }
 });
 
+// Contact endpoint: receive contact form and send email
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, message } = req.body || {};
+    if (!name || !email || !message) return res.status(400).json({ error: 'Missing fields' });
+
+    if (!mailTransporter) {
+      console.warn('Contact send attempted but mail transporter is not configured.');
+      return res.status(500).json({ error: 'Mail service not configured' });
+    }
+
+    const mailOptions = {
+      from: `"Alumni Portal" <${MAIL_USER}>`,
+      to: MAIL_USER,
+      subject: `Contact form: ${name} <${email}>`,
+      replyTo: email,
+      text: `From: ${name} <${email}>\n\n${message}`,
+      html: `<p><strong>From:</strong> ${name} &lt;${email}&gt;</p><hr><div style="white-space:pre-wrap">${message}</div>`
+    };
+
+    const info = await mailTransporter.sendMail(mailOptions);
+    console.log('Contact message sent, messageId=', info && info.messageId);
+    return res.json({ message: 'Message sent — thank you!' });
+  } catch (err) {
+    console.error('Contact send failed:', err && err.message ? err.message : err);
+    return res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
 // --- Global error handler ---
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
@@ -427,5 +472,4 @@ app.listen(PORT, async () => {
     console.error('Postgres connection test failed:', err);
   }
 });
-
 
